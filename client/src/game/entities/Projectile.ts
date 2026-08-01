@@ -46,8 +46,10 @@ export class Projectile {
         
         this.wind = this.config.affectedByWind ? wind : 0;
 
-        // If it stops on impact, we might want to start it with 0 velocity, 
-        // or let it be tossed slightly. The old code forced vx=0, vy=0 for dynamite/mine.
+        // Use the weaponType as the texture key for now
+        this.sprite = scene.add.sprite(x, y, weaponType);
+        this.sprite.setOrigin(0.5, 0.5);
+        
         if (this.config.stopOnImpact) {
             this.vx = 0;
             this.vy = 0;
@@ -56,11 +58,10 @@ export class Projectile {
             this.vy = vy;
         }
 
-        this.sprite = scene.add.sprite(x, y, this.config.spriteKey);
         this.sprite.setScale(0.5);
     }
 
-    public static simulateStep(x: number, y: number, vx: number, vy: number, wind: number, weaponType: WeaponType): { x: number, y: number, vx: number, vy: number } {
+    public static simulateStep(x: number, y: number, vx: number, vy: number, wind: number, weaponType: string): { x: number, y: number, vx: number, vy: number } {
         const config = WEAPONS[weaponType];
         const currentWind = config.affectedByWind ? wind : 0;
         const newVy = vy + Projectile.BASE_GRAVITY * config.gravityMultiplier;
@@ -124,11 +125,12 @@ export class Projectile {
              this.sprite.setRotation(Math.atan2(this.vy, this.vx));
         }
 
-        // Timers
-        if (this.config.timerMs > 0) {
+        // Timer logic
+        if (this.config.timerMs !== undefined && this.config.timerMs > 0) {
             this.timer += delta;
             if (this.timer >= this.config.timerMs) {
                 this.explode(this.x, this.y);
+                return;
             }
         }
 

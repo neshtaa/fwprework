@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { WorldPhysics } from '../core/WorldPhysics';
 import { Worm } from '../entities/Worm';
 import { Projectile } from '../entities/Projectile';
+import { WEAPONS } from '../data/weapons';
 import type { WeaponType } from '../entities/Projectile';
 
 function getRequiredElement(id: string): HTMLElement {
@@ -38,6 +39,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private trajectoryGraphics!: Phaser.GameObjects.Graphics;
     private currentWind: number = 0;
 
+
     constructor() {
         super('DestructibleTerrainScene');
     }
@@ -60,6 +62,18 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     create() {
         this.setupUIBindings();
         getRequiredElement('game-over-screen').style.display = 'none';
+
+        const weaponSelect = getRequiredElement('weaponSelect') as HTMLSelectElement;
+        weaponSelect.innerHTML = '';
+        for (const [key, config] of Object.entries(WEAPONS)) {
+            if (config.shown) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.text = config.name || key;
+                weaponSelect.appendChild(option);
+            }
+        }
+        weaponSelect.value = 'bazooka';
 
         const mapKey = 'map';
         const sourceImage = this.textures.get(mapKey).getSourceImage();
@@ -112,15 +126,13 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     }
 
     private setupUIBindings() {
-        this.registry.set('currentWeapon', 'bazooka');
-
-        // Bind DOM events directly without polluting global window
-        getRequiredElement('btn-bazooka').onclick = () => this.registry.set('currentWeapon', 'bazooka');
-        getRequiredElement('btn-grenade').onclick = () => this.registry.set('currentWeapon', 'grenade');
-        getRequiredElement('btn-dynamite').onclick = () => this.registry.set('currentWeapon', 'dynamite');
-        getRequiredElement('btn-mine').onclick = () => this.registry.set('currentWeapon', 'mine');
-        getRequiredElement('btn-hhg').onclick = () => this.registry.set('currentWeapon', 'holy_hand_grenade');
+        const weaponSelect = getRequiredElement('weaponSelect') as HTMLSelectElement;
+        weaponSelect.addEventListener('change', (e) => {
+            this.registry.set('currentWeapon', (e.target as HTMLSelectElement).value);
+        });
         
+        // Initial setup
+        this.registry.set('currentWeapon', weaponSelect.value);
         getRequiredElement('btn-restart').onclick = () => this.scene.restart();
     }
 
