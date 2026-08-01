@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { WorldPhysics } from '../core/WorldPhysics';
 
 export class Worm {
-    public sprite: Phaser.GameObjects.Arc; // For now using Arc (circle) instead of proper sprite
+    public sprite: Phaser.GameObjects.Sprite; 
     public health: number = 100;
     public team: number;
     public x: number;
@@ -31,9 +31,12 @@ export class Worm {
         this.team = team;
         this.worldPhysics = worldPhysics;
         
-        this.sprite = scene.add.circle(x, y, 6, color);
-        // Add a small indicator for facing direction
-        // Normally this would be a proper sprite
+        // Use real sprite
+        this.sprite = scene.add.sprite(x, y, 'worm');
+        // Apply team color tint to distinguish them
+        this.sprite.setTint(color);
+        // Scale appropriately if the extracted sprite is big
+        this.sprite.setScale(0.5);
     }
 
     public update(_delta: number) {
@@ -98,6 +101,7 @@ export class Worm {
         if (this.isGrounded) {
             this.vx = -this.moveSpeed;
             this.facingRight = false;
+            this.sprite.setFlipX(false); // Adjust based on how original sprite faces
         }
     }
 
@@ -105,6 +109,7 @@ export class Worm {
         if (this.isGrounded) {
             this.vx = this.moveSpeed;
             this.facingRight = true;
+            this.sprite.setFlipX(true);
         }
     }
 

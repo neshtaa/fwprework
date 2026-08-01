@@ -10,7 +10,40 @@
     </style>
   </head>
   <body>
-    <div id="game-container"></div>
+    <div style="position: relative; width: 1300px; height: 700px;">
+      <div id="game-container"></div>
+      
+      <!-- UI Layer -->
+      <div id="ui-layer" style="position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; font-family: sans-serif;">
+        
+        <div id="top-bar" style="position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: auto;">
+          <div id="team-healths" style="background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; min-width: 200px;">
+            <div id="team1-health" style="color: #ff5555;">Red Team: 0</div>
+            <div id="team2-health" style="color: #55ff55;">Green Team: 0</div>
+            <div id="team3-health" style="color: #5555ff;">Blue Team: 0</div>
+          </div>
+          
+          <div style="text-align: center;">
+             <div id="turn-timer" style="background: rgba(0,0,0,0.7); color: white; padding: 10px; font-size: 32px; border-radius: 5px; font-weight: bold;">60</div>
+             <div id="active-team-text" style="background: rgba(0,0,0,0.7); color: white; padding: 5px; margin-top: 5px; border-radius: 5px; font-size: 14px;">Red Turn</div>
+          </div>
+          
+          <div id="weapon-selector" style="background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; display: flex; flex-direction: column; gap: 5px;">
+            <div style="font-size: 12px; margin-bottom: 5px;">WEAPONS</div>
+            <button id="btn-bazooka" style="padding: 5px; cursor: pointer; font-weight: bold;" onclick="window.selectWeapon('bazooka')">Bazooka</button>
+            <button id="btn-grenade" style="padding: 5px; cursor: pointer;" onclick="window.selectWeapon('grenade')">Grenade</button>
+            <button id="btn-dynamite" style="padding: 5px; cursor: pointer;" onclick="window.selectWeapon('dynamite')">Dynamite</button>
+            <div id="aim-power" style="margin-top: 5px; font-size: 12px; display: none;">Power: <span id="power-val">0</span>%</div>
+          </div>
+        </div>
+        
+        <div id="game-over-screen" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); color: white; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto;">
+          <h1 id="winner-text" style="font-size: 48px; margin-bottom: 20px;">Team Wins!</h1>
+          <button onclick="window.restartGame()" style="padding: 10px 30px; font-size: 24px; cursor: pointer; border-radius: 5px; background: #4caf50; color: white; border: none;">Play Again</button>
+        </div>
+        
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
