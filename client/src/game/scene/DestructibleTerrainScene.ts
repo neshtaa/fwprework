@@ -45,8 +45,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('map', '/1_dmap.png');
-        this.load.json('levelsConfig', '/levels_config.json');
+        const currentMapPath = this.registry.get('currentMap') || '/1_dmap.png';
+        this.load.image('map', currentMapPath);
         
         // Load extracted assets
         this.load.image('worm', '/assets/worm.png');
@@ -57,6 +57,49 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         this.load.image('holy_hand_grenade', '/assets/holy_hand_grenade.png');
         this.load.image('crosshair', '/assets/crosshair.png');
         this.load.image('explosion', '/assets/explosion.png');
+
+        // Sounds
+        this.load.audio("sniper", "/sounds/10_sniper.wav");
+        this.load.audio("shotgun", "/sounds/11_shotgun.wav");
+        this.load.audio("sheep", "/sounds/12_sheep.wav");
+        this.load.audio("fire", "/sounds/13_fire.wav");
+        this.load.audio("firing", "/sounds/14_firing.wav");
+        this.load.audio("plasma", "/sounds/15_plasma.wav");
+        this.load.audio("petrol_bomb", "/sounds/16_petrol_bomb.wav");
+        this.load.audio("old_woman", "/sounds/17_old_woman.wav");
+        this.load.audio("mine_tick", "/sounds/18_mine_tick.wav");
+        this.load.audio("mine", "/sounds/19_mine.wav");
+        this.load.audio("backflip", "/sounds/1_backflip.wav");
+        this.load.audio("mine_activate", "/sounds/20_mine_activate.wav");
+        this.load.audio("laser", "/sounds/21_laser.wav");
+        this.load.audio("jet_pack_start", "/sounds/22_jet_pack_start.wav");
+        this.load.audio("jet_pack", "/sounds/23_jet_pack.wav");
+        this.load.audio("jet_pack_finish", "/sounds/24_jet_pack_finish.wav");
+        this.load.audio("holy_hand_grenade", "/sounds/25_holy_hand_grenade.mp3");
+        this.load.audio("pistol", "/sounds/26_pistol.wav");
+        this.load.audio("grenade", "/sounds/27_grenade.wav");
+        this.load.audio("girder", "/sounds/28_girder.wav");
+        this.load.audio("gauss", "/sounds/29_gauss.wav");
+        this.load.audio("select_worm", "/sounds/2_select_worm.wav");
+        this.load.audio("fuse", "/sounds/30_fuse.wav");
+        this.load.audio("new_level", "/sounds/31_new_level.wav");
+        this.load.audio("explosion3", "/sounds/32_explosion3.wav");
+        this.load.audio("explosion2", "/sounds/33_explosion2.wav");
+        this.load.audio("explosion1", "/sounds/34_explosion1.wav");
+        this.load.audio("drill", "/sounds/35_drill.wav");
+        this.load.audio("dragon_ball", "/sounds/36_dragon_ball.wav");
+        this.load.audio("blow_torch", "/sounds/37_blow_torch.wav");
+        this.load.audio("baseball_bat", "/sounds/38_baseball_bat.wav");
+        this.load.audio("banana", "/sounds/39_banana.wav");
+        this.load.audio("walk1", "/sounds/3_walk1.wav");
+        this.load.audio("air_strike", "/sounds/40_air_strike.wav");
+        this.load.audio("_music", "/sounds/41__music.wav");
+        this.load.audio("walk2", "/sounds/4_walk2.wav");
+        this.load.audio("thunder2", "/sounds/5_thunder2.wav");
+        this.load.audio("thunder1", "/sounds/6_thunder1.wav");
+        this.load.audio("throwing", "/sounds/7_throwing.wav");
+        this.load.audio("teleport", "/sounds/8_teleport.wav");
+        this.load.audio("splash", "/sounds/9_splash.wav");
     }
 
     create() {
@@ -174,7 +217,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
 
+        this.sound.play('throwing', { volume: 0.6 });
+
         const proj = new Projectile(this, activeWorm.x, activeWorm.y, vx, vy, currentWeapon, this.worldPhysics, this.currentWind, (expX, expY, radius, damage) => {
+            // Play explosion sound
+            const expSounds = ['explosion1', 'explosion2', 'explosion3'];
+            const snd = expSounds[Math.floor(Math.random() * expSounds.length)];
+            this.sound.play(snd, { volume: 0.5 });
+            
             this.handleExplosion(expX, expY, radius, damage);
         });
         this.projectiles.push(proj);
