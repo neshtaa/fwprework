@@ -125,8 +125,8 @@ export class Worm {
 
         // Keep inside bounds roughly
         if (this.x < 0) this.x = 0;
-        if (this.x > 2000) this.x = 2000; // Will be limited by actual map width
-        if (this.y > 1500) {
+        if (this.x > this.worldPhysics.width) this.x = this.worldPhysics.width;
+        if (this.y > this.worldPhysics.height) {
             // Fell off map (drowning)
             this.takeDamage(10000);
         }

@@ -3,8 +3,8 @@ import Phaser from 'phaser';
 export class WorldPhysics {
     private canvasTexture: Phaser.Textures.CanvasTexture;
     private ctx: CanvasRenderingContext2D;
-    private width: number;
-    private height: number;
+    public readonly width: number;
+    public readonly height: number;
     private imageData!: ImageData;
 
     constructor(canvasTexture: Phaser.Textures.CanvasTexture) {
