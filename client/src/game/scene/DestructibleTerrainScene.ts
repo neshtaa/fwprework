@@ -38,6 +38,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
     private trajectoryGraphics!: Phaser.GameObjects.Graphics;
     private currentWind: number = 0;
+    
+    // Inventory: teamId -> { weaponKey -> count }
+    private teamInventories: Record<number, Record<string, number>> = {};
 
 
     constructor() {
@@ -149,11 +152,21 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 const worm = new Worm(this, x, y, color, team, this.worldPhysics, wormName);
                 this.worms.push(worm);
             }
+            
+            // Init inventory for this team
+            this.teamInventories[team] = {};
+            for (const [key, config] of Object.entries(WEAPONS)) {
+                if (config.shown) {
+                    this.teamInventories[team][key] = config.limit > 0 ? config.limit : -1;
+                }
+            }
         };
 
         spawnWorms(assault1.team1, 0xff5555, 1, 'Red');
         spawnWorms(assault1.team2, 0x55ff55, 2, 'Green');
         spawnWorms(assault1.team3, 0x5555ff, 3, 'Blue');
+
+        this.updateWeaponUI();
 
         this.aimCrosshair = this.add.image(0, 0, 'crosshair');
         this.aimCrosshair.setVisible(false);
@@ -191,6 +204,37 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         // Initial setup
         this.registry.set('currentWeapon', weaponSelect.value);
         getRequiredElement('btn-restart').onclick = () => this.scene.restart();
+    }
+    
+    private updateWeaponUI() {
+        const weaponSelect = getRequiredElement('weaponSelect') as HTMLSelectElement;
+        const currentVal = weaponSelect.value;
+        weaponSelect.innerHTML = '';
+        
+        const activeTeam = this.worms[this.activeWormIndex]?.team || 1;
+        const inventory = this.teamInventories[activeTeam];
+        
+        for (const [key, config] of Object.entries(WEAPONS)) {
+            if (config.shown) {
+                const count = inventory[key];
+                if (count === 0) continue; // Out of ammo
+                
+                const option = document.createElement('option');
+                option.value = key;
+                const countText = count === -1 ? '∞' : count;
+                option.text = `${config.name || key} (${countText})`;
+                weaponSelect.appendChild(option);
+            }
+        }
+        
+        // Restore selection if still available, else pick first
+        if (inventory[currentVal] !== 0 && weaponSelect.querySelector(`option[value="${currentVal}"]`)) {
+            weaponSelect.value = currentVal;
+            this.registry.set('currentWeapon', currentVal);
+        } else if (weaponSelect.options.length > 0) {
+            weaponSelect.value = weaponSelect.options[0].value;
+            this.registry.set('currentWeapon', weaponSelect.value);
+        }
     }
 
     private screenToWorld(pointerX: number, pointerY: number): { x: number, y: number } {
@@ -230,6 +274,16 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const vy = (dy / dist) * speed;
 
         const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
+
+        if (currentWeapon) {
+            const activeTeam = activeWorm.team;
+            const inventory = this.teamInventories[activeTeam];
+            if (inventory[currentWeapon] === 0) return;
+            if (inventory[currentWeapon] > 0) {
+                inventory[currentWeapon]--;
+            }
+            this.updateWeaponUI();
+        }
 
         this.sound.play('throwing', { volume: 0.6 });
 
@@ -471,6 +525,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         }
 
         this.currentWind = (Math.random() - 0.5) * 0.4;
+        
+        this.updateWeaponUI();
 
         if (found) {
             this.worms[this.activeWormIndex].isActive = true;
