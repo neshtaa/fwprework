@@ -170,7 +170,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         this.updateWeaponUI();
 
-        this.aiBot = new AIBot(this.worldPhysics, this.worms);
+        this.aiBot = new AIBot(this, this.worldPhysics, this.worms);
 
         this.aimCrosshair = this.add.image(0, 0, 'crosshair');
         this.aimCrosshair.setVisible(false);

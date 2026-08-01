@@ -4,10 +4,12 @@ import { WEAPONS } from '../data/weapons';
 import type { WeaponType } from '../data/weapons';
 
 export class AIBot {
+    private scene: Phaser.Scene;
     private worldPhysics: WorldPhysics;
     private worms: Worm[];
 
-    constructor(worldPhysics: WorldPhysics, worms: Worm[]) {
+    constructor(scene: Phaser.Scene, worldPhysics: WorldPhysics, worms: Worm[]) {
+        this.scene = scene;
         this.worldPhysics = worldPhysics;
         this.worms = worms;
     }
@@ -22,7 +24,7 @@ export class AIBot {
         // Select a weapon
         // Prioritize bazooka or grenade if we have ammo
         let selectedWeapon: any = 'bazooka';
-        const allowedAiWeapons = ['bazooka', 'grenade', 'mine', 'dynamite', 'cluster_bomb', 'holy_hand_grenade'];
+        const allowedAiWeapons = ['bazooka', 'grenade', 'mine', 'dynamite', 'holy_hand_grenade'];
         const weaponKeys = allowedAiWeapons.filter(k => inventory[k] !== 0);
         
         if (weaponKeys.length > 0) {
@@ -57,9 +59,9 @@ export class AIBot {
         bestAngle += (Math.random() - 0.5) * 0.1;
 
         // Callback after a small delay to simulate "thinking"
-        setTimeout(() => {
+        this.scene.time.delayedCall(1500, () => {
             callback(selectedWeapon, bestAngle, bestPower);
-        }, 1500);
+        });
     }
 
     private simulateShot(shooter: Worm, target: Worm, angle: number, power: number, weaponKey: WeaponType, wind: number): number {
