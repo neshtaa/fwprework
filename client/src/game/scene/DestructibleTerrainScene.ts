@@ -48,13 +48,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const currentMapPath = this.registry.get('currentMap') || '/1_dmap.png';
         this.load.image('map', currentMapPath);
         
-        // Load extracted assets
-        this.load.image('worm', '/assets/worm.png');
-        this.load.image('bazooka', '/assets/bazooka.png');
-        this.load.image('grenade', '/assets/grenade.png');
-        this.load.image('dynamite', '/assets/dynamite.png');
-        this.load.image('mine', '/assets/mine.png');
-        this.load.image('holy_hand_grenade', '/assets/holy_hand_grenade.png');
+        for (let i = 0; i < 60; i++) this.load.image(`worm_idle_${i}`, `/sprites/worm_idle/${i + 1}.png`);
+        for (let i = 0; i < 9; i++) this.load.image(`worm_walk_${i}`, `/sprites/worm_walk/${i + 1}.png`);
+        this.load.image('bazooka_0', '/sprites/bazooka/1.png');
+        this.load.image('grenade_0', '/sprites/grenade/1.png');
+        this.load.image('dynamite_0', '/sprites/dynamite/1.png');
+        this.load.image('mine_0', '/sprites/mine/1.png');
+        this.load.image('holy_hand_grenade_0', '/sprites/holy_hand_grenade/1.png');
+
         this.load.image('crosshair', '/assets/crosshair.png');
         this.load.image('explosion', '/assets/explosion.png');
 
@@ -174,6 +175,19 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.registry.set('currentWeapon', (e.target as HTMLSelectElement).value);
         });
         
+        this.anims.create({
+            key: 'worm_idle',
+            frames: Array.from({ length: 60 }, (_, i) => ({ key: `worm_idle_${i}` })),
+            frameRate: 30,
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'worm_walk',
+            frames: Array.from({ length: 9 }, (_, i) => ({ key: `worm_walk_${i}` })),
+            frameRate: 15,
+            repeat: -1
+        });
+
         // Initial setup
         this.registry.set('currentWeapon', weaponSelect.value);
         getRequiredElement('btn-restart').onclick = () => this.scene.restart();

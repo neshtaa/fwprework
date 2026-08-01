@@ -35,8 +35,9 @@ export class Worm {
         this.team = team;
         this.worldPhysics = worldPhysics;
         
-        // Use real sprite
-        this.sprite = scene.add.sprite(x, y, 'worm');
+        // Use real sprite and play idle animation
+        this.sprite = scene.add.sprite(x, y, 'worm_idle_0');
+        this.sprite.play('worm_idle');
         // Apply team color tint to distinguish them
         this.sprite.setTint(color);
         // Scale appropriately if the extracted sprite is big
@@ -102,6 +103,16 @@ export class Worm {
         if (hitResult.hit) {
             this.x = hitResult.x;
             this.y = hitResult.y;
+
+            if (Math.abs(this.vx) > 0.1) {
+                if (this.sprite.anims.currentAnim?.key !== 'worm_walk') {
+                    this.sprite.play('worm_walk');
+                }
+            } else {
+                if (this.sprite.anims.currentAnim?.key !== 'worm_idle') {
+                    this.sprite.play('worm_idle');
+                }
+            }
 
             if (this.vy > 0) {
                 // Determine fall damage

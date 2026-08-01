@@ -47,7 +47,7 @@ export class Projectile {
         this.wind = this.config.affectedByWind ? wind : 0;
 
         // Use the weaponType as the texture key for now
-        this.sprite = scene.add.sprite(x, y, weaponType);
+        this.sprite = scene.add.sprite(x, y, `${weaponType}_0`);
         this.sprite.setOrigin(0.5, 0.5);
         
         if (this.config.stopOnImpact) {
