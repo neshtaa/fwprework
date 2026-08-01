@@ -8,11 +8,9 @@ const config: Phaser.Types.Core.GameConfig = {
     parent: 'game-container',
     backgroundColor: '#87CEEB', // Sky blue
     scene: DestructibleTerrainScene,
-    physics: {
-        default: 'arcade',
-        arcade: {
-            debug: false
-        }
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
     }
 };
 
