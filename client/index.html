@@ -31,18 +31,18 @@
           
           <div id="weapon-selector" style="background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; display: flex; flex-direction: column; gap: 5px;">
             <div style="font-size: 12px; margin-bottom: 5px;">WEAPONS</div>
-            <button id="btn-bazooka" style="padding: 5px; cursor: pointer; font-weight: bold;" onclick="window.selectWeapon('bazooka')">Bazooka</button>
-            <button id="btn-grenade" style="padding: 5px; cursor: pointer;" onclick="window.selectWeapon('grenade')">Grenade</button>
-            <button id="btn-dynamite" style="padding: 5px; cursor: pointer;" onclick="window.selectWeapon('dynamite')">Dynamite</button>
-            <button id="btn-mine" style="padding: 5px; cursor: pointer;" onclick="window.selectWeapon('mine')">Mine</button>
-            <button id="btn-hhg" style="padding: 5px; cursor: pointer;" onclick="window.selectWeapon('holy_hand_grenade')">Holy Hand Grenade</button>
+            <button id="btn-bazooka" style="padding: 5px; cursor: pointer; font-weight: bold;">Bazooka</button>
+            <button id="btn-grenade" style="padding: 5px; cursor: pointer;">Grenade</button>
+            <button id="btn-dynamite" style="padding: 5px; cursor: pointer;">Dynamite</button>
+            <button id="btn-mine" style="padding: 5px; cursor: pointer;">Mine</button>
+            <button id="btn-hhg" style="padding: 5px; cursor: pointer;">Holy Hand Grenade</button>
             <div id="aim-power" style="margin-top: 5px; font-size: 12px; display: none;">Power: <span id="power-val">0</span>%</div>
           </div>
         </div>
         
-        <div id="game-over-screen" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); color: white; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto;">
-          <h1 id="winner-text" style="font-size: 48px; margin-bottom: 20px;">Team Wins!</h1>
-          <button onclick="window.restartGame()" style="padding: 10px 30px; font-size: 24px; cursor: pointer; border-radius: 5px; background: #4caf50; color: white; border: none;">Play Again</button>
+        <div id="game-over-screen" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; display: none;">
+            <h1 id="winner-text" style="color: white; font-size: 48px; margin-bottom: 20px;">Game Over</h1>
+            <button id="btn-restart" style="padding: 10px 20px; font-size: 24px; cursor: pointer; border-radius: 5px; background: #fff; color: #000; border: none;">Play Again</button>
         </div>
         
       </div>
