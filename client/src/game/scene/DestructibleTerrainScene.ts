@@ -153,8 +153,31 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         }
 
-        const levelsConfig = this.cache.json.get('levelsConfig');
-        const assault1 = levelsConfig.WORM_ASSAULT_COORDS.assault1;
+        const levelsConfig = this.registry.get('levelsConfig') || {};
+        const mapName = this.registry.get('currentMapName') || 'assault_1';
+        
+        let coordsData: any = null;
+        if (levelsConfig.WORM_ASSAULT_COORDS && levelsConfig.WORM_ASSAULT_COORDS[mapName]) {
+            coordsData = levelsConfig.WORM_ASSAULT_COORDS[mapName];
+        } else if (levelsConfig.WORM_BOSS_COORDS && levelsConfig.WORM_BOSS_COORDS[mapName]) {
+            coordsData = levelsConfig.WORM_BOSS_COORDS[mapName];
+        } else {
+            const altName = mapName.replace('_', '');
+            if (levelsConfig.WORM_ASSAULT_COORDS && levelsConfig.WORM_ASSAULT_COORDS[altName]) {
+                coordsData = levelsConfig.WORM_ASSAULT_COORDS[altName];
+            } else if (levelsConfig.WORM_BOSS_COORDS && levelsConfig.WORM_BOSS_COORDS[altName]) {
+                coordsData = levelsConfig.WORM_BOSS_COORDS[altName];
+            }
+        }
+        
+        if (!coordsData) {
+            console.warn(`No spawn coordinates found for map '${mapName}'. Using fallback coordinates.`);
+            coordsData = {
+                team1: [300, 100, 400, 100, 500, 100],
+                team2: [800, 100, 900, 100, 1000, 100],
+                team3: [600, 100, 700, 100]
+            };
+        }
 
         const spawnWorms = (teamCoords: number[], color: number, team: number, teamName: string) => {
             if (!teamCoords) return;
@@ -175,9 +198,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             }
         };
 
-        spawnWorms(assault1.team1, 0xff5555, 1, 'Red');
-        spawnWorms(assault1.team2, 0x55ff55, 2, 'Green');
-        spawnWorms(assault1.team3, 0x5555ff, 3, 'Blue');
+        spawnWorms(coordsData.team1, 0xff5555, 1, 'Red');
+        spawnWorms(coordsData.team2, 0x55ff55, 2, 'Green');
+        spawnWorms(coordsData.team3, 0x5555ff, 3, 'Blue');
 
         this.updateWeaponUI();
 

@@ -31,9 +31,12 @@ async function initGame() {
     // Pass the levels config to the global registry so scenes can use it
     game.registry.set('levelsConfig', levelsConfig);
     game.registry.set('currentMap', mapSelect.value);
+    game.registry.set('currentMapName', mapSelect.options[mapSelect.selectedIndex].text);
     
     mapSelect.addEventListener('change', (e) => {
-        game.registry.set('currentMap', (e.target as HTMLSelectElement).value);
+        const select = e.target as HTMLSelectElement;
+        game.registry.set('currentMap', select.value);
+        game.registry.set('currentMapName', select.options[select.selectedIndex].text);
         // Restart the active scene to load the new map
         const activeScene = game.scene.getScenes(true)[0];
         if (activeScene) {
