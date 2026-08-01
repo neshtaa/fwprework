@@ -5,23 +5,30 @@ export class WorldPhysics {
     private ctx: CanvasRenderingContext2D;
     private width: number;
     private height: number;
+    private imageData!: ImageData;
 
     constructor(canvasTexture: Phaser.Textures.CanvasTexture) {
         this.canvasTexture = canvasTexture;
         this.ctx = canvasTexture.getContext();
         this.width = canvasTexture.width;
         this.height = canvasTexture.height;
+        this.updateCache();
+    }
+
+    private updateCache() {
+        this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
     }
 
     public isSolid(x: number, y: number): boolean {
-        // Keep bounds check
-        if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
-            return false; // Out of bounds is empty (or we can make floor solid, but usually out is empty)
+        const floorX = Math.floor(x);
+        const floorY = Math.floor(y);
+
+        if (floorX < 0 || floorX >= this.width || floorY < 0 || floorY >= this.height) {
+            return false;
         }
         
-        // Optimize pixel reading by checking 1x1 area
-        const pixelData = this.ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-        return pixelData[3] > 0; // If alpha > 0, it's solid
+        const index = (floorY * this.width + floorX) * 4 + 3; // Alpha channel
+        return this.imageData.data[index] > 0;
     }
 
     public checkHitLine(startX: number, startY: number, endX: number, endY: number): { hit: boolean, x: number, y: number } {
@@ -59,5 +66,7 @@ export class WorldPhysics {
         this.ctx.restore();
         // Update the texture to reflect canvas changes
         this.canvasTexture.refresh();
+        // Update cached pixel data
+        this.updateCache();
     }
 }
