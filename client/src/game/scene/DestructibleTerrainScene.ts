@@ -109,6 +109,17 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     }
 
     create() {
+        // Reset state for restart
+        this.worms = [];
+        this.projectiles = [];
+        this.activeWormIndex = 0;
+        this.turnTimeLeft = 60;
+        this.waitingForTurnEnd = false;
+        this.isGameOver = false;
+        this.isAiming = false;
+        this.teamInventories = {};
+        this.currentWind = 0;
+
         this.setupUIBindings();
         getRequiredElement('game-over-screen').style.display = 'none';
 
@@ -188,9 +199,10 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
     private setupUIBindings() {
         const weaponSelect = getRequiredElement('weaponSelect') as HTMLSelectElement;
-        weaponSelect.addEventListener('change', (e) => {
-            this.registry.set('currentWeapon', (e.target as HTMLSelectElement).value);
-        });
+        weaponSelect.onchange = (e) => {
+            const val = (e.target as HTMLSelectElement).value;
+            this.registry.set('currentWeapon', val);
+        };
         
         this.anims.create({
             key: 'worm_idle',
@@ -217,6 +229,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         
         const activeTeam = this.worms[this.activeWormIndex]?.team || 1;
         const inventory = this.teamInventories[activeTeam];
+        
+        weaponSelect.disabled = activeTeam !== 1;
         
         for (const [key, config] of Object.entries(WEAPONS)) {
             if (config.shown) {
@@ -504,6 +518,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         if (this.isGameOver) return;
         
         if (this.worms.length > 0) {
+            const activeWorm = this.worms[this.activeWormIndex];
+            
+            // End turn immediately if active worm died (e.g. fell off map) and we aren't already waiting
+            if (activeWorm.health <= 0 && !this.waitingForTurnEnd) {
+                this.waitingForTurnEnd = true;
+                this.turnTimeLeft = 0;
+            }
+
             this.handlePlayerInput();
             this.updateAiming(delta);
         }

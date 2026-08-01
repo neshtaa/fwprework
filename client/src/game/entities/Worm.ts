@@ -81,12 +81,12 @@ export class Worm {
 
     public update(_delta: number) {
         if (this.health <= 0) {
-            if (this.sprite.active) {
+            if (this.isGrounded && this.sprite && this.sprite.active) {
                 this.sprite.destroy();
                 this.nameText.destroy();
                 this.healthBar.destroy();
             }
-            return;
+            if (!this.sprite || !this.sprite.active) return;
         }
 
         // Apply gravity if not grounded
