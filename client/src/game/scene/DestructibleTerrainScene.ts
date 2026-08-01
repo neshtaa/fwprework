@@ -3,7 +3,8 @@ import { WorldPhysics } from '../core/WorldPhysics';
 import { Worm } from '../entities/Worm';
 import { Projectile } from '../entities/Projectile';
 import { WEAPONS } from '../data/weapons';
-import type { WeaponType } from '../entities/Projectile';
+import type { WeaponType } from '../data/weapons';
+import { AIBot } from '../entities/AIBot';
 
 function getRequiredElement(id: string): HTMLElement {
     const el = document.getElementById(id);
@@ -41,6 +42,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     
     // Inventory: teamId -> { weaponKey -> count }
     private teamInventories: Record<number, Record<string, number>> = {};
+    private aiBot!: AIBot;
 
 
     constructor() {
@@ -168,6 +170,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         this.updateWeaponUI();
 
+        this.aiBot = new AIBot(this.worldPhysics, this.worms);
+
         this.aimCrosshair = this.add.image(0, 0, 'crosshair');
         this.aimCrosshair.setVisible(false);
 
@@ -247,7 +251,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private handlePointerDown() {
         if (this.waitingForTurnEnd || this.isGameOver || this.worms.length === 0) return;
         const activeWorm = this.worms[this.activeWormIndex];
-        if (activeWorm.health <= 0) return;
+        if (activeWorm.health <= 0 || activeWorm.team !== 1) return;
         
         this.isAiming = true;
         this.aimPower = 0;
@@ -286,7 +290,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         }
 
         this.sound.play('throwing', { volume: 0.6 });
-
+        
+        this.fireWeapon(vx, vy);
+    }
+    
+    public fireWeapon(vx: number, vy: number) {
+        const activeWorm = this.worms[this.activeWormIndex];
+        const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
+        
         const proj = new Projectile(this, activeWorm.x, activeWorm.y, vx, vy, currentWeapon, this.worldPhysics, this.currentWind, (expX, expY, radius, damage) => {
             // Play explosion sound
             const expSounds = ['explosion1', 'explosion2', 'explosion3'];
@@ -400,6 +411,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
     private handlePlayerInput() {
         const activeWorm = this.worms[this.activeWormIndex];
+        if (activeWorm.team !== 1) return;
         if (activeWorm.health > 0 && !this.waitingForTurnEnd) {
             if (this.cursors.left.isDown) activeWorm.moveLeft();
             else if (this.cursors.right.isDown) activeWorm.moveRight();
@@ -529,10 +541,33 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         this.updateWeaponUI();
 
         if (found) {
-            this.worms[this.activeWormIndex].isActive = true;
-            this.cameras.main.startFollow(this.worms[this.activeWormIndex].sprite);
+            const activeWorm = this.worms[this.activeWormIndex];
+            activeWorm.isActive = true;
+            this.cameras.main.startFollow(activeWorm.sprite);
             this.startTurnTimer();
             this.updateUI();
+
+            // Let AI take turn if team != 1
+            if (activeWorm.team !== 1) {
+                this.aiBot.takeTurn(activeWorm, this.currentWind, this.teamInventories[activeWorm.team], (weapon, angle, power) => {
+                    if (this.isGameOver) return;
+                    this.registry.set('currentWeapon', weapon);
+                    
+                    const powerNorm = power / 100;
+                    const speed = powerNorm * 15;
+                    const vx = Math.cos(angle) * speed;
+                    const vy = Math.sin(angle) * speed;
+                    
+                    // Switch facing direction based on angle
+                    activeWorm.facingRight = Math.cos(angle) > 0;
+                    if (activeWorm.sprite) {
+                        activeWorm.sprite.setFlipX(!activeWorm.facingRight);
+                    }
+                    
+                    this.fireWeapon(vx, vy);
+                });
+            }
+
         } else {
             this.checkWinCondition();
         }

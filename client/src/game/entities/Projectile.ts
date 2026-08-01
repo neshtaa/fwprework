@@ -3,7 +3,7 @@ import { WorldPhysics } from '../core/WorldPhysics';
 import { WEAPONS } from '../data/weapons';
 import type { WeaponConfig } from '../data/weapons';
 
-export type WeaponType = 'bazooka' | 'grenade' | 'dynamite' | 'mine' | 'holy_hand_grenade';
+import type { WeaponType } from '../data/weapons';
 
 export class Projectile {
     public sprite: Phaser.GameObjects.Sprite;
