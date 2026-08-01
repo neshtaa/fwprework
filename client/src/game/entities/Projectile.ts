@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { WorldPhysics } from '../core/WorldPhysics';
+import { WEAPONS } from '../data/weapons';
+import type { WeaponConfig } from '../data/weapons';
 
 export type WeaponType = 'bazooka' | 'grenade' | 'dynamite' | 'mine' | 'holy_hand_grenade';
 
@@ -14,14 +16,13 @@ export class Projectile {
     public wind: number = 0;
     
     private worldPhysics: WorldPhysics;
-    private gravity: number = 0.2;
-    private explosionRadius: number = 40;
-    private damage: number = 25;
-    
-    private timer: number = 0; // ms
-    private maxTimer: number = 3000; // 3 seconds for grenade/dynamite
+    private config: WeaponConfig;
+    private timer: number = 0;
+    private isPlanted: boolean = false;
 
-    // Callback when it explodes
+    // Shared physical constants
+    public static readonly BASE_GRAVITY = 0.2;
+
     private onExplode: (x: number, y: number, radius: number, damage: number) => void;
 
     constructor(
@@ -37,81 +38,84 @@ export class Projectile {
     ) {
         this.x = x;
         this.y = y;
-        this.vx = vx;
-        this.vy = vy;
         this.weaponType = weaponType;
         this.worldPhysics = worldPhysics;
-        this.wind = wind;
         this.onExplode = onExplode;
         
-        let spriteKey = 'bazooka';
-        if (weaponType === 'grenade') spriteKey = 'grenade';
-        if (weaponType === 'dynamite') spriteKey = 'dynamite';
-        if (weaponType === 'mine') spriteKey = 'mine';
-        if (weaponType === 'holy_hand_grenade') spriteKey = 'holy_hand_grenade';
-
-        this.sprite = scene.add.sprite(x, y, spriteKey);
-        this.sprite.setScale(0.5);
+        this.config = WEAPONS[weaponType];
         
-        if (weaponType === 'dynamite') {
-            this.vx = 0;
-            this.vy = 0; // Drops in place or very slight toss
-            this.explosionRadius = 70;
-            this.damage = 50;
-            this.wind = 0; // Wind doesn't affect heavy dynamite
-        } else if (weaponType === 'grenade') {
-            this.explosionRadius = 50;
-            this.damage = 35;
-        } else if (weaponType === 'mine') {
+        this.wind = this.config.affectedByWind ? wind : 0;
+
+        // If it stops on impact, we might want to start it with 0 velocity, 
+        // or let it be tossed slightly. The old code forced vx=0, vy=0 for dynamite/mine.
+        if (this.config.stopOnImpact) {
             this.vx = 0;
             this.vy = 0;
-            this.explosionRadius = 40;
-            this.damage = 40;
-            this.maxTimer = 5000;
-            this.wind = 0;
-        } else if (weaponType === 'holy_hand_grenade') {
-            this.explosionRadius = 150;
-            this.damage = 100;
-            this.maxTimer = 3000;
+        } else {
+            this.vx = vx;
+            this.vy = vy;
         }
+
+        this.sprite = scene.add.sprite(x, y, this.config.spriteKey);
+        this.sprite.setScale(0.5);
+    }
+
+    public static simulateStep(x: number, y: number, vx: number, vy: number, wind: number, weaponType: WeaponType): { x: number, y: number, vx: number, vy: number } {
+        const config = WEAPONS[weaponType];
+        const currentWind = config.affectedByWind ? wind : 0;
+        const newVy = vy + Projectile.BASE_GRAVITY * config.gravityMultiplier;
+        const newVx = vx + currentWind;
+        return { x: x + newVx, y: y + newVy, vx: newVx, vy: newVy };
     }
 
     public update(delta: number) {
         if (!this.isActive) return;
 
-        // Gravity and wind
-        this.vy += this.gravity;
-        this.vx += this.wind;
+        if (!this.isPlanted) {
+            // Apply physics step
+            const step = Projectile.simulateStep(this.x, this.y, this.vx, this.vy, this.wind, this.weaponType);
+            this.vx = step.vx;
+            this.vy = step.vy;
 
-        const targetX = this.x + this.vx;
-        const targetY = this.y + this.vy;
+            const targetX = step.x;
+            const targetY = step.y;
 
-        const hitResult = this.worldPhysics.checkHitLine(this.x, this.y, targetX, targetY);
+            const hitResult = this.worldPhysics.checkHitLine(this.x, this.y, targetX, targetY);
 
-        if (hitResult.hit) {
-            if (this.weaponType === 'bazooka') {
-                this.explode(hitResult.x, hitResult.y);
-            } else {
-                // Bounce
-                this.x = hitResult.x;
-                this.y = hitResult.y;
-                // Simple bounce reflection (assuming flat ground mostly for now, or just invert Y)
-                // A true reflection requires normals, but we'll approximate
-                if (this.vy > 0) {
-                    this.vy = -this.vy * 0.5; // bounce up
-                    this.vx = this.vx * 0.7; // friction
+            if (hitResult.hit) {
+                if (this.config.explodeOnImpact) {
+                    this.explode(hitResult.x, hitResult.y);
+                    return;
+                } else if (this.config.stopOnImpact) {
+                    this.x = hitResult.x;
+                    this.y = hitResult.y;
+                    this.vx = 0;
+                    this.vy = 0;
+                    this.isPlanted = true;
+                    
+                    while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
+                        this.y -= 1;
+                    }
                 } else {
-                    this.vy = -this.vy * 0.5;
+                    // Bounce
+                    this.x = hitResult.x;
+                    this.y = hitResult.y;
+                    
+                    if (this.vy > 0) {
+                        this.vy = -this.vy * 0.5;
+                        this.vx = this.vx * 0.7;
+                    } else {
+                        this.vy = -this.vy * 0.5;
+                    }
+                    
+                    while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
+                        this.y -= 1;
+                    }
                 }
-                
-                // Prevent falling through if stuck
-                while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
-                    this.y -= 1;
-                }
+            } else {
+                this.x = targetX;
+                this.y = targetY;
             }
-        } else {
-            this.x = targetX;
-            this.y = targetY;
         }
         
         this.sprite.setPosition(this.x, this.y);
@@ -121,9 +125,9 @@ export class Projectile {
         }
 
         // Timers
-        if (this.weaponType === 'grenade' || this.weaponType === 'dynamite' || this.weaponType === 'mine' || this.weaponType === 'holy_hand_grenade') {
+        if (this.config.timerMs > 0) {
             this.timer += delta;
-            if (this.timer >= this.maxTimer) {
+            if (this.timer >= this.config.timerMs) {
                 this.explode(this.x, this.y);
             }
         }
@@ -138,7 +142,7 @@ export class Projectile {
         if (!this.isActive) return;
         this.isActive = false;
         
-        this.onExplode(x, y, this.explosionRadius, this.damage);
+        this.onExplode(x, y, this.config.explosionRadius, this.config.damage);
         this.destroy();
     }
 

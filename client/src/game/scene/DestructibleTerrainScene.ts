@@ -296,12 +296,11 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
                 // Simulate 30 frames
                 for (let i=0; i<30; i++) {
-                    simVy += 0.2; // Projectile gravity
-                    if (window.currentWeapon !== 'dynamite' && window.currentWeapon !== 'mine') {
-                        simVx += this.currentWind;
-                    }
-                    simX += simVx;
-                    simY += simVy;
+                    const step = Projectile.simulateStep(simX, simY, simVx, simVy, this.currentWind, window.currentWeapon);
+                    simX = step.x;
+                    simY = step.y;
+                    simVx = step.vx;
+                    simVy = step.vy;
                     this.trajectoryGraphics.lineTo(simX, simY);
                 }
                 this.trajectoryGraphics.strokePath();
