@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { WorldPhysics } from '../core/WorldPhysics';
 
-export type WeaponType = 'bazooka' | 'grenade' | 'dynamite';
+export type WeaponType = 'bazooka' | 'grenade' | 'dynamite' | 'mine' | 'holy_hand_grenade';
 
 export class Projectile {
     public sprite: Phaser.GameObjects.Sprite;
@@ -11,6 +11,7 @@ export class Projectile {
     public vy: number;
     public isActive: boolean = true;
     public weaponType: WeaponType;
+    public wind: number = 0;
     
     private worldPhysics: WorldPhysics;
     private gravity: number = 0.2;
@@ -31,6 +32,7 @@ export class Projectile {
         vy: number,
         weaponType: WeaponType,
         worldPhysics: WorldPhysics,
+        wind: number,
         onExplode: (x: number, y: number, radius: number, damage: number) => void
     ) {
         this.x = x;
@@ -39,11 +41,14 @@ export class Projectile {
         this.vy = vy;
         this.weaponType = weaponType;
         this.worldPhysics = worldPhysics;
+        this.wind = wind;
         this.onExplode = onExplode;
         
         let spriteKey = 'bazooka';
         if (weaponType === 'grenade') spriteKey = 'grenade';
         if (weaponType === 'dynamite') spriteKey = 'dynamite';
+        if (weaponType === 'mine') spriteKey = 'mine';
+        if (weaponType === 'holy_hand_grenade') spriteKey = 'holy_hand_grenade';
 
         this.sprite = scene.add.sprite(x, y, spriteKey);
         this.sprite.setScale(0.5);
@@ -53,17 +58,30 @@ export class Projectile {
             this.vy = 0; // Drops in place or very slight toss
             this.explosionRadius = 70;
             this.damage = 50;
+            this.wind = 0; // Wind doesn't affect heavy dynamite
         } else if (weaponType === 'grenade') {
             this.explosionRadius = 50;
             this.damage = 35;
+        } else if (weaponType === 'mine') {
+            this.vx = 0;
+            this.vy = 0;
+            this.explosionRadius = 40;
+            this.damage = 40;
+            this.maxTimer = 5000;
+            this.wind = 0;
+        } else if (weaponType === 'holy_hand_grenade') {
+            this.explosionRadius = 150;
+            this.damage = 100;
+            this.maxTimer = 3000;
         }
     }
 
     public update(delta: number) {
         if (!this.isActive) return;
 
-        // Gravity
+        // Gravity and wind
         this.vy += this.gravity;
+        this.vx += this.wind;
 
         const targetX = this.x + this.vx;
         const targetY = this.y + this.vy;
@@ -102,8 +120,8 @@ export class Projectile {
              this.sprite.setRotation(Math.atan2(this.vy, this.vx));
         }
 
-        // Timers for grenade/dynamite
-        if (this.weaponType === 'grenade' || this.weaponType === 'dynamite') {
+        // Timers
+        if (this.weaponType === 'grenade' || this.weaponType === 'dynamite' || this.weaponType === 'mine' || this.weaponType === 'holy_hand_grenade') {
             this.timer += delta;
             if (this.timer >= this.maxTimer) {
                 this.explode(this.x, this.y);

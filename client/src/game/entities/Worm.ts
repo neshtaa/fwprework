@@ -3,7 +3,11 @@ import { WorldPhysics } from '../core/WorldPhysics';
 
 export class Worm {
     public sprite: Phaser.GameObjects.Sprite; 
+    private nameText: Phaser.GameObjects.Text;
+    private healthBar: Phaser.GameObjects.Graphics;
+
     public health: number = 100;
+    public maxHealth: number = 100;
     public team: number;
     public x: number;
     public y: number;
@@ -25,7 +29,7 @@ export class Worm {
     private worldPhysics: WorldPhysics;
     public isActive: boolean = false;
 
-    constructor(scene: Phaser.Scene, x: number, y: number, color: number, team: number, worldPhysics: WorldPhysics) {
+    constructor(scene: Phaser.Scene, x: number, y: number, color: number, team: number, worldPhysics: WorldPhysics, name: string) {
         this.x = x;
         this.y = y;
         this.team = team;
@@ -37,44 +41,78 @@ export class Worm {
         this.sprite.setTint(color);
         // Scale appropriately if the extracted sprite is big
         this.sprite.setScale(0.5);
+
+        // Name text
+        this.nameText = scene.add.text(x, y - 30, name, {
+            fontSize: '10px',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+
+        // Health bar
+        this.healthBar = scene.add.graphics();
+        this.drawHealthBar();
+    }
+
+    private drawHealthBar() {
+        this.healthBar.clear();
+        if (this.health <= 0) return;
+
+        const width = 30;
+        const height = 4;
+        const x = this.x - width / 2;
+        const y = this.y - 20;
+
+        // Background
+        this.healthBar.fillStyle(0x000000, 0.8);
+        this.healthBar.fillRect(x, y, width, height);
+
+        // Health
+        const hpPercent = Math.max(0, this.health / this.maxHealth);
+        let color = 0x00ff00;
+        if (hpPercent < 0.5) color = 0xffff00;
+        if (hpPercent < 0.2) color = 0xff0000;
+
+        this.healthBar.fillStyle(color, 1);
+        this.healthBar.fillRect(x, y, width * hpPercent, height);
     }
 
     public update(_delta: number) {
-        // Apply gravity
-        this.vy += this.gravity;
-        if (this.vy > this.maxFallSpeed) {
-            this.vy = this.maxFallSpeed;
+        if (this.health <= 0) {
+            if (this.sprite.active) {
+                this.sprite.destroy();
+                this.nameText.destroy();
+                this.healthBar.destroy();
+            }
+            return;
         }
 
-        // Apply movement vector with collision checks
+        // Apply gravity if not grounded
+        if (!this.isGrounded) {
+            this.vy += this.gravity;
+            if (this.vy > this.maxFallSpeed) this.vy = this.maxFallSpeed;
+        }
+
         const targetX = this.x + this.vx;
         const targetY = this.y + this.vy;
 
         const hitResult = this.worldPhysics.checkHitLine(this.x, this.y, targetX, targetY);
 
         if (hitResult.hit) {
-            // We hit something. Need to resolve collision.
-            // Simplified resolution: stop movement
             this.x = hitResult.x;
             this.y = hitResult.y;
-            
-            // If moving down and hit something, we are grounded
-            if (this.vy > 0) {
-                this.isGrounded = true;
-                this.vy = 0;
-                // Add friction if on ground
-                this.vx *= 0.8;
-                if (Math.abs(this.vx) < 0.1) this.vx = 0;
-            } else if (this.vy < 0) {
-                // Hit ceiling
-                this.vy = 0;
-            }
-            
-            // Wall collision
-            if (this.worldPhysics.isSolid(this.x + Math.sign(this.vx) * 3, this.y)) {
-                this.vx = 0;
-            }
 
+            if (this.vy > 0) {
+                // Determine fall damage
+                if (this.vy > 8) {
+                    this.takeDamage(Math.floor((this.vy - 8) * 5));
+                }
+                this.isGrounded = true;
+            }
+            this.vx = 0;
+            this.vy = 0;
+            
             // Pop out of ground slightly to prevent getting stuck
             while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
                 this.y -= 1;
@@ -89,12 +127,24 @@ export class Worm {
         if (this.x < 0) this.x = 0;
         if (this.x > 2000) this.x = 2000; // Will be limited by actual map width
         if (this.y > 1500) {
-            // Fell off map
-            this.health = 0;
+            // Fell off map (drowning)
+            this.takeDamage(10000);
         }
 
         // Update sprite position
         this.sprite.setPosition(this.x, this.y);
+        
+        // Sync name and health bar
+        if (this.health > 0) {
+            this.nameText.setPosition(this.x, this.y - 30);
+            this.drawHealthBar();
+        }
+        
+        // Friction
+        if (this.isGrounded) {
+            this.vx *= 0.8;
+            if (Math.abs(this.vx) < 0.1) this.vx = 0;
+        }
     }
 
     public moveLeft() {

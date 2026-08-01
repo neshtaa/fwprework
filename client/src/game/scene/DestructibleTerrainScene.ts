@@ -38,6 +38,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private aimPower: number = 0;
     private aimCrosshair!: Phaser.GameObjects.Image;
 
+    private trajectoryGraphics!: Phaser.GameObjects.Graphics;
+    private currentWind: number = 0;
+
     constructor() {
         super('DestructibleTerrainScene');
     }
@@ -51,6 +54,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         this.load.image('bazooka', '/assets/bazooka.png');
         this.load.image('grenade', '/assets/grenade.png');
         this.load.image('dynamite', '/assets/dynamite.png');
+        this.load.image('mine', '/assets/mine.png');
+        this.load.image('holy_hand_grenade', '/assets/holy_hand_grenade.png');
         this.load.image('crosshair', '/assets/crosshair.png');
         this.load.image('explosion', '/assets/explosion.png');
     }
@@ -70,6 +75,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         this.mapImage = this.add.image(width / 2, height / 2, 'terrain');
         this.worldPhysics = new WorldPhysics(this.canvasTexture);
 
+        this.trajectoryGraphics = this.add.graphics();
+
         if (this.input.keyboard) {
             this.cursors = this.input.keyboard.createCursorKeys();
             this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -78,20 +85,21 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const levelsConfig = this.cache.json.get('levelsConfig');
         const assault1 = levelsConfig.WORM_ASSAULT_COORDS.assault1;
 
-        const spawnWorms = (teamCoords: number[], color: number, team: number) => {
+        const spawnWorms = (teamCoords: number[], color: number, team: number, teamName: string) => {
             if (!teamCoords) return;
             for (let i = 0; i < teamCoords.length; i += 2) {
                 const x = teamCoords[i];
                 const y = teamCoords[i + 1];
-                const worm = new Worm(this, x, y, color, team, this.worldPhysics);
+                const wormName = `${teamName} ${Math.floor(i/2) + 1}`;
+                const worm = new Worm(this, x, y, color, team, this.worldPhysics, wormName);
                 this.worms.push(worm);
             }
         };
 
         // Spawn teams (red, green, blue)
-        spawnWorms(assault1.team1, 0xff5555, 1);
-        spawnWorms(assault1.team2, 0x55ff55, 2);
-        spawnWorms(assault1.team3, 0x5555ff, 3);
+        spawnWorms(assault1.team1, 0xff5555, 1, 'Red');
+        spawnWorms(assault1.team2, 0x55ff55, 2, 'Green');
+        spawnWorms(assault1.team3, 0x5555ff, 3, 'Blue');
 
         this.aimCrosshair = this.add.image(0, 0, 'crosshair');
         this.aimCrosshair.setVisible(false);
@@ -118,6 +126,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             if (!this.isAiming) return;
             this.isAiming = false;
             this.aimCrosshair.setVisible(false);
+            this.trajectoryGraphics.clear();
             document.getElementById('aim-power')!.style.display = 'none';
 
             const activeWorm = this.worms[this.activeWormIndex];
@@ -134,11 +143,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             const vx = (dx / dist) * speed;
             const vy = (dy / dist) * speed;
 
-            const proj = new Projectile(this, activeWorm.x, activeWorm.y, vx, vy, window.currentWeapon, this.worldPhysics, (expX, expY, radius, damage) => {
+            const proj = new Projectile(this, activeWorm.x, activeWorm.y, vx, vy, window.currentWeapon, this.worldPhysics, this.currentWind, (expX, expY, radius, damage) => {
                 this.handleExplosion(expX, expY, radius, damage);
             });
             this.projectiles.push(proj);
             
+            // Camera follow projectile
+            this.cameras.main.startFollow(proj.sprite);
+
             this.waitingForTurnEnd = true;
             this.turnTimeLeft = 0; // End turn timer immediately
         });
@@ -216,6 +228,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             document.getElementById('active-team-text')!.innerText = `${teamNames[currentWorm.team]} Turn`;
             document.getElementById('active-team-text')!.style.color = currentWorm.team === 1 ? '#ff5555' : currentWorm.team === 2 ? '#55ff55' : '#5555ff';
         }
+        
+        document.getElementById('wind-indicator')!.innerText = `Wind: ${(this.currentWind * 100).toFixed(0)}`;
     }
 
     private checkWinCondition() {
@@ -266,6 +280,31 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                     activeWorm.x + (dx/dist)*50 + (this.mapImage.x - this.canvasTexture.width/2), 
                     activeWorm.y + (dy/dist)*50 + (this.mapImage.y - this.canvasTexture.height/2)
                 );
+
+                // Draw trajectory
+                this.trajectoryGraphics.clear();
+                this.trajectoryGraphics.lineStyle(2, 0xff0000, 0.5);
+                
+                const speed = (this.aimPower / 100) * 20 + 2; 
+                let simVx = (dx / dist) * speed;
+                let simVy = (dy / dist) * speed;
+                let simX = activeWorm.x + (this.mapImage.x - this.canvasTexture.width/2);
+                let simY = activeWorm.y + (this.mapImage.y - this.canvasTexture.height/2);
+
+                this.trajectoryGraphics.beginPath();
+                this.trajectoryGraphics.moveTo(simX, simY);
+
+                // Simulate 30 frames
+                for (let i=0; i<30; i++) {
+                    simVy += 0.2; // Projectile gravity
+                    if (window.currentWeapon !== 'dynamite' && window.currentWeapon !== 'mine') {
+                        simVx += this.currentWind;
+                    }
+                    simX += simVx;
+                    simY += simVy;
+                    this.trajectoryGraphics.lineTo(simX, simY);
+                }
+                this.trajectoryGraphics.strokePath();
             }
         }
 
@@ -318,6 +357,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             }
             attempts++;
         }
+
+        // Random wind between -0.2 and 0.2
+        this.currentWind = (Math.random() - 0.5) * 0.4;
 
         if (found) {
             this.worms[this.activeWormIndex].isActive = true;
