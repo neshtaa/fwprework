@@ -1,11 +1,16 @@
 
 function get_object_flags(param1) {
     var _loc2_ = {};
-    var _this = { FWP: { player: { perks: {} }, chosen_map: "" } };
+    var _this = { 
+        FWP: { player: { perks: {} }, chosen_map: "" },
+        player: { perks: {} },
+        _world: { chosen_map: "" },
+        get_perk_effect: function() { return 1; }
+    };
     // Replace 'this.' with '_this.'
     var execute = function() {
         
-         var _loc2_ = {};
+         // var _loc2_ = {};
          _loc2_ = {
             "W":6,
             "H":6,
