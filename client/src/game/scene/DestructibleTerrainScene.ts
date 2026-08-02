@@ -230,18 +230,23 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.registry.set('currentWeapon', val);
         };
         
-        this.anims.create({
-            key: 'worm_idle',
-            frames: Array.from({ length: 60 }, (_, i) => ({ key: `worm_idle_${i}` })),
-            frameRate: 30,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'worm_walk',
-            frames: Array.from({ length: 9 }, (_, i) => ({ key: `worm_walk_${i}` })),
-            frameRate: 15,
-            repeat: -1
-        });
+        if (!this.anims.exists('worm_idle')) {
+            this.anims.create({
+                key: 'worm_idle',
+                frames: Array.from({ length: 60 }, (_, i) => ({ key: `worm_idle_${i}` })),
+                frameRate: 30,
+                repeat: -1
+            });
+        }
+
+        if (!this.anims.exists('worm_walk')) {
+            this.anims.create({
+                key: 'worm_walk',
+                frames: Array.from({ length: 9 }, (_, i) => ({ key: `worm_walk_${i}` })),
+                frameRate: 15,
+                repeat: -1
+            });
+        }
 
         // Initial setup
         this.registry.set('currentWeapon', weaponSelect.value);
