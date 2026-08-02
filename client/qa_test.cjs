@@ -112,8 +112,16 @@ const fs = require('fs');
     // Aim & Shoot Bazooka
     let invBefore = await getGameState();
     let ammoBefore = invBefore.teamInventories[1]['bazooka'];
-    console.log(`Ammo before shot: ${ammoBefore}`);
+    console.log(`Ammo before shot: ${invBefore.ammo}`);
+    
+    await page.evaluate(() => {
+        const scene = window.__GAME__.scene.scenes[0];
+        for (const teamId in scene.teamInventories) {
+            scene.teamInventories[teamId]['bazooka'] = 10;
+        }
+    });
 
+    // Find active worm and shoot
     const box = await page.locator('#game-container canvas').boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
