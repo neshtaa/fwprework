@@ -140,6 +140,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const width = sourceImage.width as number;
         const height = sourceImage.height as number;
 
+        if (this.textures.exists('terrain')) {
+            this.textures.remove('terrain');
+        }
         this.canvasTexture = this.textures.createCanvas('terrain', width, height)!;
         this.canvasTexture.drawFrame(mapKey);
 
