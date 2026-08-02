@@ -29,6 +29,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     // Game state
     private turnTimeLeft: number = 60;
     private turnTimerEvent!: Phaser.Time.TimerEvent;
+    private turnEndTimerEvent?: Phaser.Time.TimerEvent;
     private waitingForTurnEnd: boolean = false;
     private isGameOver: boolean = false;
 
@@ -528,19 +529,28 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             }
         }
 
-        if (this.waitingForTurnEnd && !anyProjectilesActive) {
-            let anyWormsMoving = false;
-            for (const worm of this.worms) {
-                if (worm.health > 0 && (!worm.isGrounded || Math.abs(worm.vx) > 0.1 || Math.abs(worm.vy) > 0.1)) {
-                    anyWormsMoving = true;
+        if (this.waitingForTurnEnd) {
+            if (anyProjectilesActive) {
+                // waiting for projectiles
+            } else {
+                let anyWormsMoving = false;
+                for (const worm of this.worms) {
+                    if (worm.health > 0 && (!worm.isGrounded || Math.abs(worm.vx) > 0.1 || Math.abs(worm.vy) > 0.1)) {
+                        anyWormsMoving = true;
+                        // console.log(`TURN STATE: Worm ${worm.team} is moving (grounded: ${worm.isGrounded}, vx: ${worm.vx.toFixed(2)}, vy: ${worm.vy.toFixed(2)})`);
+                    }
                 }
-            }
 
-            if (!anyWormsMoving) {
-                this.waitingForTurnEnd = false;
-                this.time.delayedCall(1000, () => {
-                    this.nextTurn();
-                });
+                if (!anyWormsMoving && !this.isGameOver) {
+                    this.waitingForTurnEnd = false;
+                    
+                    if (this.turnEndTimerEvent) {
+                        this.turnEndTimerEvent.destroy();
+                    }
+                    this.turnEndTimerEvent = this.time.delayedCall(1000, () => {
+                        this.nextTurn();
+                    });
+                }
             }
         }
     }
