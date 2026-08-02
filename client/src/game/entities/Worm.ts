@@ -129,7 +129,10 @@ export class Worm {
                 this.y -= 1;
             }
         } else {
-            this.isGrounded = false;
+            const groundCheck = this.worldPhysics.checkHitLine(this.x, this.y, this.x, this.y + 2);
+            if (!groundCheck.hit) {
+                this.isGrounded = false;
+            }
             this.x = targetX;
             this.y = targetY;
         }
