@@ -176,11 +176,30 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         
         if (!coordsData) {
             console.warn(`No spawn coordinates found for map '${mapName}'. Using fallback coordinates.`);
-            coordsData = {
-                team1: [300, 100, 400, 100, 500, 100],
-                team2: [800, 100, 900, 100, 1000, 100],
-                team3: [600, 100, 700, 100]
+            const w = this.canvasTexture.width;
+            coordsData = { team1: [], team2: [], team3: [] };
+            
+            const margin = 100;
+            const availableW = w - margin * 2;
+            const totalWorms = 8;
+            const step = availableW / totalWorms;
+            
+            const findGroundY = (x: number): number => {
+                const ctx = this.canvasTexture.getContext();
+                const idata = ctx.getImageData(x, 0, 1, this.canvasTexture.height);
+                for (let y = 0; y < this.canvasTexture.height; y++) {
+                    const alpha = idata.data[y * 4 + 3];
+                    if (alpha > 50) return Math.max(20, y - 10);
+                }
+                return 20;
             };
+
+            for (let i = 0; i < 4; i++) {
+                const x1 = Math.floor(margin + (i * 2) * step);
+                const x2 = Math.floor(margin + (i * 2 + 1) * step);
+                coordsData.team1.push(x1, findGroundY(x1));
+                coordsData.team2.push(x2, findGroundY(x2));
+            }
         }
 
         const spawnWorms = (teamCoords: number[], color: number, team: number, teamName: string) => {
@@ -328,11 +347,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         if (currentWeapon) {
             const activeTeam = activeWorm.team;
             const inventory = this.teamInventories[activeTeam];
-            if (inventory[currentWeapon] === 0) return;
-            if (inventory[currentWeapon] > 0) {
-                inventory[currentWeapon]--;
-            }
-            this.updateWeaponUI();
+            if (inventory[currentWeapon] === 0) return; // Out of ammo, can't shoot
         }
 
         this.sound.play('throwing', { volume: 0.6 });
@@ -343,6 +358,15 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     public fireWeapon(vx: number, vy: number) {
         const activeWorm = this.worms[this.activeWormIndex];
         const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
+        
+        const activeTeam = activeWorm.team;
+        const inventory = this.teamInventories[activeTeam];
+        
+        if (inventory[currentWeapon] === 0) return; // Cannot fire if out of ammo
+        if (inventory[currentWeapon] > 0) {
+            inventory[currentWeapon]--;
+        }
+        this.updateWeaponUI();
         
         const proj = new Projectile(this, activeWorm.x, activeWorm.y, vx, vy, currentWeapon, this.worldPhysics, this.currentWind, (expX, expY, radius, damage) => {
             // Play explosion sound
@@ -584,17 +608,47 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         this.updateTurnState();
     }
 
+    private lastWormIndexPerTeam: Record<number, number> = {};
+
     private nextTurn() {
         if (this.worms.length === 0 || this.isGameOver) return;
         
-        this.worms[this.activeWormIndex].isActive = false;
+        const currentWorm = this.worms[this.activeWormIndex];
+        currentWorm.isActive = false;
 
+        // Save last played worm for this team
+        this.lastWormIndexPerTeam[currentWorm.team] = this.activeWormIndex;
+
+        // Get list of teams that have at least one alive worm
+        const aliveTeams = [...new Set(this.worms.filter(w => w.health > 0).map(w => w.team))].sort((a, b) => a - b);
+        
+        if (aliveTeams.length === 0) {
+            this.checkWinCondition();
+            return;
+        }
+
+        let nextTeam = currentWorm.team;
+        if (aliveTeams.length > 1) {
+            // Find next team
+            let idx = aliveTeams.indexOf(currentWorm.team);
+            if (idx === -1) idx = 0;
+            else idx = (idx + 1) % aliveTeams.length;
+            nextTeam = aliveTeams[idx];
+        }
+
+        // Find the next alive worm for nextTeam
         let found = false;
         let attempts = 0;
+        
+        // Start searching from the last played worm of this team, or 0
+        let searchIndex = this.lastWormIndexPerTeam[nextTeam] !== undefined ? this.lastWormIndexPerTeam[nextTeam] : -1;
+        
         while (!found && attempts < this.worms.length) {
-            this.activeWormIndex = (this.activeWormIndex + 1) % this.worms.length;
-            if (this.worms[this.activeWormIndex].health > 0) {
+            searchIndex = (searchIndex + 1) % this.worms.length;
+            const w = this.worms[searchIndex];
+            if (w.team === nextTeam && w.health > 0) {
                 found = true;
+                this.activeWormIndex = searchIndex;
             }
             attempts++;
         }
@@ -612,8 +666,10 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
             // Let AI take turn if team != 1
             if (activeWorm.team !== 1) {
+                const currentTurnWorm = activeWorm;
                 this.aiBot.takeTurn(activeWorm, this.currentWind, this.teamInventories[activeWorm.team], (weapon, angle, power) => {
                     if (this.isGameOver) return;
+                    if (this.worms[this.activeWormIndex] !== currentTurnWorm) return; // Turn changed while thinking
                     this.registry.set('currentWeapon', weapon);
                     
                     const powerNorm = power / 100;

@@ -66,7 +66,23 @@ export class WorldPhysics {
         this.ctx.restore();
         // Update the texture to reflect canvas changes
         this.canvasTexture.refresh();
-        // Update cached pixel data
-        this.updateCache();
+        
+        // Update cached pixel data directly without getImageData stall
+        const startX = Math.max(0, Math.floor(x - radius));
+        const endX = Math.min(this.width - 1, Math.ceil(x + radius));
+        const startY = Math.max(0, Math.floor(y - radius));
+        const endY = Math.min(this.height - 1, Math.ceil(y + radius));
+        const radiusSq = radius * radius;
+
+        for (let py = startY; py <= endY; py++) {
+            for (let px = startX; px <= endX; px++) {
+                const dx = px - x;
+                const dy = py - y;
+                if (dx * dx + dy * dy <= radiusSq) {
+                    const index = (py * this.width + px) * 4 + 3; // Alpha channel
+                    this.imageData.data[index] = 0;
+                }
+            }
+        }
     }
 }
