@@ -111,8 +111,9 @@ const fs = require('fs');
 
     // Aim & Shoot Bazooka
     let invBefore = await getGameState();
-    let ammoBefore = invBefore.teamInventories[1]['bazooka'];
-    console.log(`Ammo before shot: ${invBefore.ammo}`);
+    let ammoBefore = invBefore.teamInventories[1] ? invBefore.teamInventories[1]['bazooka'] : undefined;
+    console.log(`[DEBUG] teamInventories before injection:`, JSON.stringify(invBefore.teamInventories));
+    console.log(`Ammo before shot: ${ammoBefore}`);
     
     await page.evaluate(() => {
         const scene = window.__GAME__.scene.scenes[0];
