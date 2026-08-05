@@ -171,19 +171,23 @@ export class Worm {
         }
     }
 
+    public setFacing(facingRight: boolean) {
+        this.facingRight = facingRight;
+        // Assuming original sprites face left
+        this.sprite.setFlipX(this.facingRight);
+    }
+
     public moveLeft() {
         if (this.isGrounded) {
             this.vx = -this.moveSpeed;
-            this.facingRight = false;
-            this.sprite.setFlipX(false); // Adjust based on how original sprite faces
+            this.setFacing(false);
         }
     }
 
     public moveRight() {
         if (this.isGrounded) {
             this.vx = this.moveSpeed;
-            this.facingRight = true;
-            this.sprite.setFlipX(true);
+            this.setFacing(true);
         }
     }
 
@@ -196,6 +200,7 @@ export class Worm {
     }
     
     public takeDamage(amount: number) {
+        if (amount <= 0) return;
         this.health -= amount;
         if (this.health <= 0) {
             this.health = 0;

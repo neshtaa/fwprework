@@ -242,6 +242,18 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         this.input.on('pointerdown', () => this.handlePointerDown());
         this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => this.handlePointerUp(pointer));
+        
+        this.events.once('shutdown', this.cleanup, this);
+    }
+
+    private cleanup() {
+        if (this.turnTimerEvent) {
+            this.turnTimerEvent.destroy();
+        }
+        if (this.turnEndTimerEvent) {
+            this.turnEndTimerEvent.destroy();
+            this.turnEndTimerEvent = undefined;
+        }
     }
 
     private setupUIBindings() {
@@ -353,6 +365,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         this.sound.play('throwing', { volume: 0.6 });
         
+        activeWorm.setFacing(vx > 0);
         this.fireWeapon(vx, vy);
     }
     
@@ -558,6 +571,13 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         // Simulate 30 frames
         for (let i=0; i<30; i++) {
             const step = Projectile.simulateStep(simX, simY, simVx, simVy, this.currentWind, currentWeapon);
+            const hitResult = this.worldPhysics.checkHitLine(simX, simY, step.x, step.y);
+            
+            if (hitResult.hit) {
+                this.trajectoryGraphics.lineTo(hitResult.x + offsetX, hitResult.y + offsetY);
+                break;
+            }
+
             simX = step.x;
             simY = step.y;
             simVx = step.vx;
@@ -591,14 +611,18 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 }
 
                 if (!anyWormsMoving && !this.isGameOver) {
-                    this.waitingForTurnEnd = false;
-                    
+                    if (!this.turnEndTimerEvent) {
+                        this.turnEndTimerEvent = this.time.delayedCall(1000, () => {
+                            this.waitingForTurnEnd = false;
+                            this.turnEndTimerEvent = null;
+                            this.nextTurn();
+                        });
+                    }
+                } else if (anyWormsMoving) {
                     if (this.turnEndTimerEvent) {
                         this.turnEndTimerEvent.destroy();
+                        this.turnEndTimerEvent = null;
                     }
-                    this.turnEndTimerEvent = this.time.delayedCall(1000, () => {
-                        this.nextTurn();
-                    });
                 }
             }
         }
@@ -703,10 +727,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                     const vy = Math.sin(angle) * speed;
                     
                     // Switch facing direction based on angle
-                    activeWorm.facingRight = Math.cos(angle) > 0;
-                    if (activeWorm.sprite) {
-                        activeWorm.sprite.setFlipX(!activeWorm.facingRight);
-                    }
+                    activeWorm.setFacing(Math.cos(angle) > 0);
                     
                     this.fireWeapon(vx, vy);
                 });

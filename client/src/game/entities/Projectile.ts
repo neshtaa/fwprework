@@ -21,7 +21,10 @@ export class Projectile {
     private isPlanted: boolean = false;
 
     // Shared physical constants
-    public static readonly BASE_GRAVITY = 0.2;
+    // Shared physical constants
+    public static readonly BASE_GRAVITY = 0.24;
+    private static readonly FIXED_TIME_STEP = 1000 / 60; // 60 FPS target
+    private physicsAccumulator: number = 0;
 
     private onExplode: (x: number, y: number, radius: number, damage: number) => void;
 
@@ -64,7 +67,7 @@ export class Projectile {
     }
 
     public static simulateStep(x: number, y: number, vx: number, vy: number, wind: number, weaponType: string): { x: number, y: number, vx: number, vy: number } {
-        const config = WEAPONS[weaponType];
+        const config = WEAPONS[weaponType as WeaponType];
         const currentWind = config.affectedByWind ? wind : 0;
         const newVy = vy + Projectile.BASE_GRAVITY * config.gravityMultiplier;
         const newVx = vx + currentWind;
@@ -74,59 +77,6 @@ export class Projectile {
     public update(delta: number) {
         if (!this.isActive) return;
 
-        if (!this.isPlanted) {
-            // Apply physics step
-            const step = Projectile.simulateStep(this.x, this.y, this.vx, this.vy, this.wind, this.weaponType);
-            this.vx = step.vx;
-            this.vy = step.vy;
-
-            const targetX = step.x;
-            const targetY = step.y;
-
-            const hitResult = this.worldPhysics.checkHitLine(this.x, this.y, targetX, targetY);
-
-            if (hitResult.hit) {
-                if (this.config.explodeOnImpact) {
-                    this.explode(hitResult.x, hitResult.y);
-                    return;
-                } else if (this.config.stopOnImpact) {
-                    this.x = hitResult.x;
-                    this.y = hitResult.y;
-                    this.vx = 0;
-                    this.vy = 0;
-                    this.isPlanted = true;
-                    
-                    while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
-                        this.y -= 1;
-                    }
-                } else {
-                    // Bounce
-                    this.x = hitResult.x;
-                    this.y = hitResult.y;
-                    
-                    if (this.vy > 0) {
-                        this.vy = -this.vy * 0.5;
-                        this.vx = this.vx * 0.7;
-                    } else {
-                        this.vy = -this.vy * 0.5;
-                    }
-                    
-                    while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
-                        this.y -= 1;
-                    }
-                }
-            } else {
-                this.x = targetX;
-                this.y = targetY;
-            }
-        }
-        
-        this.sprite.setPosition(this.x, this.y);
-        
-        if (this.vx !== 0 || this.vy !== 0) {
-             this.sprite.setRotation(Math.atan2(this.vy, this.vx));
-        }
-
         // Timer logic
         if (this.config.timerMs !== undefined && this.config.timerMs > 0) {
             this.timer += delta;
@@ -134,6 +84,69 @@ export class Projectile {
                 this.explode(this.x, this.y);
                 return;
             }
+        }
+
+        if (!this.isPlanted) {
+            this.physicsAccumulator += delta;
+
+            while (this.physicsAccumulator >= Projectile.FIXED_TIME_STEP) {
+                this.physicsAccumulator -= Projectile.FIXED_TIME_STEP;
+
+                // Apply physics step
+                const step = Projectile.simulateStep(this.x, this.y, this.vx, this.vy, this.wind, this.weaponType);
+                this.vx = step.vx;
+                this.vy = step.vy;
+
+                const targetX = step.x;
+                const targetY = step.y;
+
+                const hitResult = this.worldPhysics.checkHitLine(this.x, this.y, targetX, targetY);
+
+                if (hitResult.hit) {
+                    if (this.config.explodeOnImpact) {
+                        this.explode(hitResult.x, hitResult.y);
+                        return;
+                    } else if (this.config.stopOnImpact) {
+                        this.x = hitResult.x;
+                        this.y = hitResult.y;
+                        this.vx = 0;
+                        this.vy = 0;
+                        this.isPlanted = true;
+                        
+                        while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
+                            this.y -= 1;
+                        }
+                    } else {
+                        // Bounce
+                        this.x = hitResult.x;
+                        this.y = hitResult.y;
+                        
+                        if (this.vy > 0) {
+                            this.vy = -this.vy * 0.5;
+                            this.vx = this.vx * 0.7;
+                        } else {
+                            this.vy = -this.vy * 0.5;
+                        }
+                        
+                        while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
+                            this.y -= 1;
+                        }
+                    }
+                } else {
+                    this.x = targetX;
+                    this.y = targetY;
+                }
+
+                if (this.isPlanted || !this.isActive) {
+                    break;
+                }
+            }
+        }
+        
+        this.sprite.setPosition(this.x, this.y);
+        
+        if (this.vx !== 0 || this.vy !== 0) {
+             this.sprite.setRotation(Math.atan2(this.vy, this.vx));
         }
 
         // Out of bounds check

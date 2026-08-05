@@ -2126,7 +2126,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez125": {
         id: 125,
@@ -2143,7 +2143,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez126": {
         id: 126,
@@ -2160,7 +2160,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez127": {
         id: 127,
@@ -2177,7 +2177,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez128": {
         id: 128,
@@ -2194,7 +2194,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez129": {
         id: 129,
@@ -2211,7 +2211,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez130": {
         id: 130,
@@ -2228,7 +2228,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez131": {
         id: 131,
@@ -2245,7 +2245,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez132": {
         id: 132,
@@ -2262,7 +2262,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez133": {
         id: 133,
@@ -2279,7 +2279,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez134": {
         id: 134,
@@ -2296,7 +2296,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez135": {
         id: 135,
@@ -2313,7 +2313,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez136": {
         id: 136,
@@ -2330,7 +2330,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez137": {
         id: 137,
@@ -2347,7 +2347,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez138": {
         id: 138,
@@ -2364,7 +2364,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez139": {
         id: 139,
@@ -2381,7 +2381,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez140": {
         id: 140,
@@ -2398,7 +2398,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez141": {
         id: 141,
@@ -2415,7 +2415,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez142": {
         id: 142,
@@ -2432,7 +2432,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez143": {
         id: 143,
@@ -2449,7 +2449,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "rez144": {
         id: 144,
@@ -2466,7 +2466,7 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         delay: 0,
         gold: 0,
         diam: 0,
-        shown: true
+        shown: false
     },
     "beretta": {
         id: 201,

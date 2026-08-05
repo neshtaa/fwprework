@@ -1,3 +1,4 @@
+import { Projectile } from "./Projectile";
 import { Worm } from './Worm';
 import { WorldPhysics } from '../core/WorldPhysics';
 import { WEAPONS } from '../data/weapons';
@@ -73,22 +74,14 @@ export class AIBot {
         let simY = shooter.y;
         let simVx = Math.cos(angle) * speed;
         let simVy = Math.sin(angle) * speed;
-        
-        const simGravity = 0.5 * config.gravityMultiplier;
-        const simWind = config.affectedByWind ? wind : 0;
-        
         let steps = 0;
         const maxSteps = 300;
 
         while (steps < maxSteps) {
-            simVy += simGravity;
-            simVx += simWind * 0.05;
-
-            const nextX = simX + simVx;
-            const nextY = simY + simVy;
+            const stepResult = Projectile.simulateStep(simX, simY, simVx, simVy, wind, weaponKey);
 
             // Check hit terrain
-            const hitResult = this.worldPhysics.checkHitLine(simX, simY, nextX, nextY);
+            const hitResult = this.worldPhysics.checkHitLine(simX, simY, stepResult.x, stepResult.y);
             if (hitResult.hit) {
                 // Determine distance to target from explosion
                 simX = hitResult.x;
@@ -97,12 +90,14 @@ export class AIBot {
             }
 
             // Simple bounds check
-            if (nextX < 0 || nextX > this.worldPhysics.width || nextY > this.worldPhysics.height) {
+            if (stepResult.x < 0 || stepResult.x > this.worldPhysics.width || stepResult.y > this.worldPhysics.height) {
                 return -Infinity; // Missed completely
             }
             
-            simX = nextX;
-            simY = nextY;
+            simX = stepResult.x;
+            simY = stepResult.y;
+            simVx = stepResult.vx;
+            simVy = stepResult.vy;
             steps++;
         }
 
