@@ -24,7 +24,7 @@ export class AIBot {
         // Select a weapon
         // Prioritize bazooka or grenade if we have ammo
         let selectedWeapon: any = 'bazooka';
-        const allowedAiWeapons = ['bazooka', 'grenade', 'mine', 'dynamite', 'holy_hand_grenade'];
+        const allowedAiWeapons = ['bazooka', 'grenade'];
         const weaponKeys = allowedAiWeapons.filter(k => inventory[k] > 0 || inventory[k] === -1);
         
         if (weaponKeys.length > 0) {

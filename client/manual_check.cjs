@@ -16,11 +16,20 @@ const { chromium } = require('playwright');
     
     async function testMap(mapName) {
         console.log(`\n=== Testing Map: ${mapName} ===`);
-        await page.evaluate((m) => {
+        const selected = await page.evaluate((m) => {
             const s = document.getElementById('mapSelect');
-            s.value = m;
-            s.dispatchEvent(new Event('change'));
+            let found = false;
+            for(let i = 0; i < s.options.length; i++) {
+                if(s.options[i].text === m || s.options[i].text === m.replace('_', '')) {
+                    s.selectedIndex = i;
+                    s.dispatchEvent(new Event('change'));
+                    found = true;
+                    break;
+                }
+            }
+            return found ? s.options[s.selectedIndex].text : "NOT_FOUND";
         }, mapName);
+        console.log(`Dropdown selected: ${selected}`);
         await page.waitForTimeout(3000);
         
         for (let i = 1; i <= 8; i++) {
@@ -57,6 +66,8 @@ const { chromium } = require('playwright');
     }
 
     await testMap('assault_1');
+    await testMap('boss_1');
+    await testMap('rolitrad_1');
     
     await browser.close();
 })();

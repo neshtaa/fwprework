@@ -18,11 +18,13 @@ export class Worm {
     public isGrounded: boolean = false;
     
     // Constants matching the game
-    private gravity: number = 0.5;
+    private gravity: number = 0.24;
     private maxFallSpeed: number = 10;
     private moveSpeed: number = 1.5;
-    private jumpForceY: number = -6;
-    private jumpForceX: number = 3;
+    private jumpForceY: number = -3;
+    private jumpForceX: number = 2;
+    private backflipForceY: number = -5;
+    private backflipForceX: number = -0.8;
     
     // State
     public facingRight: boolean = true;
@@ -93,6 +95,10 @@ export class Worm {
         if (!this.isGrounded) {
             this.vy += this.gravity;
             if (this.vy > this.maxFallSpeed) this.vy = this.maxFallSpeed;
+            // Removed horizontal air friction to preserve explosion knockback
+        } else {
+            this.vx *= this.friction;
+            if (Math.abs(this.vx) < 0.1) this.vx = 0;
         }
 
         const targetX = this.x + this.vx;
@@ -114,15 +120,19 @@ export class Worm {
                 }
             }
 
-            if (this.vy > 0) {
-                // Determine fall damage
-                if (this.vy > 8) {
-                    this.takeDamage(Math.floor((this.vy - 8) * 5));
+            if (!this.isGrounded && this.vy > 0) {
+                // Apply fall damage based on Flash logic (vx + vy) * 0.2
+                const impactSpeed = Math.abs(this.vx) + Math.abs(this.vy);
+                if (impactSpeed > 4) { // small threshold to avoid damage from tiny bumps
+                    const fallDamage = Math.ceil(impactSpeed * 0.2);
+                    if (fallDamage > 0) {
+                        this.takeDamage(fallDamage);
+                    }
                 }
-                this.isGrounded = true;
             }
-            this.vx = 0;
+            
             this.vy = 0;
+            this.isGrounded = true;
             
             // Pop out of ground slightly to prevent getting stuck
             while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {

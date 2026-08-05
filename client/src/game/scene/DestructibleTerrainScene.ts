@@ -413,6 +413,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         this.worldPhysics.eraseCircle(x, y, radius);
 
+        const diameter = radius * 2;
+        
         for (const worm of this.worms) {
             if (worm.health <= 0) continue;
             
@@ -420,12 +422,34 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             const dy = worm.y - y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            if (dist < radius + 20) {
-                worm.takeDamage(damage);
+            if (dist <= diameter) {
+                let actualDamage = 0;
+                if (dist < 6.5) {
+                    actualDamage = damage;
+                } else {
+                    actualDamage = Math.ceil(damage * ((diameter - dist) / diameter));
+                }
                 
-                const force = (radius + 20 - dist) / 5;
-                worm.vx += (dx / dist) * force;
-                worm.vy += (dy / dist) * force;
+                if (actualDamage > 0) {
+                    worm.takeDamage(actualDamage);
+                }
+                
+                // Impulse calculation mirroring Flash AS3 logic
+                let normX = dx;
+                let normY = dy;
+                const maxMod = Math.max(Math.abs(normX), Math.abs(normY));
+                
+                if (maxMod > 0) {
+                    normX /= maxMod;
+                    normY /= maxMod;
+                }
+                
+                const impactMultiply = 1; // Default from Flash
+                const dvx = impactMultiply * normX * (diameter - dist) / 15;
+                const dvy = impactMultiply * normY * (diameter - dist) / 15;
+                
+                worm.vx += dvx;
+                worm.vy += dvy;
                 worm.isGrounded = false;
             }
         }
