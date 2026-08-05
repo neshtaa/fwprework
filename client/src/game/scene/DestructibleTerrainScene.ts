@@ -146,6 +146,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         }
         this.canvasTexture = this.textures.createCanvas('terrain', width, height)!;
         this.canvasTexture.drawFrame(mapKey);
+        this.canvasTexture.refresh();
 
         this.mapImage = this.add.image(width / 2, height / 2, 'terrain');
         this.worldPhysics = new WorldPhysics(this.canvasTexture);

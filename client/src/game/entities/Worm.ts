@@ -97,7 +97,7 @@ export class Worm {
             if (this.vy > this.maxFallSpeed) this.vy = this.maxFallSpeed;
             // Removed horizontal air friction to preserve explosion knockback
         } else {
-            this.vx *= this.friction;
+            this.vx *= 0.8;
             if (Math.abs(this.vx) < 0.1) this.vx = 0;
         }
 
