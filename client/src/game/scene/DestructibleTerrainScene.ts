@@ -614,14 +614,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                     if (!this.turnEndTimerEvent) {
                         this.turnEndTimerEvent = this.time.delayedCall(1000, () => {
                             this.waitingForTurnEnd = false;
-                            this.turnEndTimerEvent = null;
+                            this.turnEndTimerEvent = undefined;
                             this.nextTurn();
                         });
                     }
                 } else if (anyWormsMoving) {
                     if (this.turnEndTimerEvent) {
                         this.turnEndTimerEvent.destroy();
-                        this.turnEndTimerEvent = null;
+                        this.turnEndTimerEvent = undefined;
                     }
                 }
             }

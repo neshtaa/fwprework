@@ -88,6 +88,11 @@ export class Projectile {
 
         if (!this.isPlanted) {
             this.physicsAccumulator += delta;
+            
+            // Cap accumulator to prevent spiral of death / freezing on large delta (e.g., resuming from background tab)
+            if (this.physicsAccumulator > 1000) {
+                this.physicsAccumulator = 1000;
+            }
 
             while (this.physicsAccumulator >= Projectile.FIXED_TIME_STEP) {
                 this.physicsAccumulator -= Projectile.FIXED_TIME_STEP;

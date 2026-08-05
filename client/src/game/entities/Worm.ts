@@ -23,8 +23,6 @@ export class Worm {
     private moveSpeed: number = 1.5;
     private jumpForceY: number = -3;
     private jumpForceX: number = 2;
-    private backflipForceY: number = -5;
-    private backflipForceX: number = -0.8;
     
     // State
     public facingRight: boolean = true;
@@ -164,11 +162,7 @@ export class Worm {
             this.drawHealthBar();
         }
         
-        // Friction
-        if (this.isGrounded) {
-            this.vx *= 0.8;
-            if (Math.abs(this.vx) < 0.1) this.vx = 0;
-        }
+        // Friction is handled early in the update loop now
     }
 
     public setFacing(facingRight: boolean) {
