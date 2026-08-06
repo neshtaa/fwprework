@@ -30,7 +30,7 @@ export class Projectile {
     private multiExplosionsLeft: number;
 
     // Shared physical constants
-    public static readonly BASE_GRAVITY = 0.15;
+    public static readonly BASE_GRAVITY = 0.24;
     private static readonly FIXED_TIME_STEP = 1000 / 60; // 60 FPS target
     private physicsAccumulator: number = 0;
 
