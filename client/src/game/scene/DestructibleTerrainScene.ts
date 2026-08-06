@@ -709,6 +709,11 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private nextTurn() {
         if (this.worms.length === 0 || this.isGameOver) return;
         
+        // Apply poison DoT on turn boundary
+        for (const w of this.worms) {
+            if (w.health > 0) w.applyPoisonTick();
+        }
+
         const currentWorm = this.worms[this.activeWormIndex];
         currentWorm.isActive = false;
 

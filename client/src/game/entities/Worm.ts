@@ -31,6 +31,7 @@ export class Worm {
 
     public isPoisoned: boolean = false;
     public poisonDamage: number = 0;
+    public nextPoisonDamage: number = 0;
 
     constructor(scene: Phaser.Scene, x: number, y: number, color: number, team: number, worldPhysics: WorldPhysics, name: string) {
         this.x = x;
@@ -60,10 +61,20 @@ export class Worm {
     }
 
     public applyPoison(amount: number) {
-        if (!this.isPoisoned || amount > this.poisonDamage) {
-            this.isPoisoned = true;
-            this.poisonDamage = amount;
-            // The actual damage should be applied every turn.
+        this.isPoisoned = true;
+        this.nextPoisonDamage = amount; // overwrites if multiple hits, same as Flash
+    }
+
+    public applyPoisonTick() {
+        if (this.nextPoisonDamage > 0 || this.poisonDamage > 0) {
+            this.poisonDamage += this.nextPoisonDamage;
+            this.nextPoisonDamage = 0;
+            
+            if (this.health > this.poisonDamage) {
+                this.takeDamage(this.poisonDamage);
+            } else if (this.health > 1) {
+                this.takeDamage(this.health - 1); // Poison never kills, leaves at 1 HP
+            }
         }
     }
 
