@@ -5,6 +5,8 @@ import { Projectile } from '../entities/Projectile';
 import { WEAPONS } from '../data/weapons';
 import type { WeaponType } from '../data/weapons';
 import { AIBot } from '../entities/AIBot';
+import { FireParticle } from '../entities/FireParticle';
+import { PoisonParticle } from '../entities/PoisonParticle';
 
 function getRequiredElement(id: string): HTMLElement {
     const el = document.getElementById(id);
@@ -20,6 +22,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private worldPhysics!: WorldPhysics;
     private worms: Worm[] = [];
     private projectiles: Projectile[] = [];
+    private fireParticles: FireParticle[] = [];
+    private poisonParticles: PoisonParticle[] = [];
     private activeWormIndex: number = 0;
 
     // Keys
@@ -382,20 +386,45 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         }
         this.updateWeaponUI();
         
-        const proj = new Projectile(this, activeWorm.x, activeWorm.y, vx, vy, currentWeapon, this.worldPhysics, this.currentWind, (expX, expY, radius, damage) => {
-            // Play explosion sound
-            const expSounds = ['explosion1', 'explosion2', 'explosion3'];
-            const snd = expSounds[Math.floor(Math.random() * expSounds.length)];
-            this.sound.play(snd, { volume: 0.5 });
-            
-            this.handleExplosion(expX, expY, radius, damage);
-        });
-        this.projectiles.push(proj);
-        
+        const proj = this.spawnProjectile(activeWorm.x, activeWorm.y, vx, vy, currentWeapon);
         this.cameras.main.startFollow(proj.sprite);
 
         this.waitingForTurnEnd = true;
         this.turnTimeLeft = 0; 
+    }
+
+    private spawnProjectile(x: number, y: number, vx: number, vy: number, weaponType: string): Projectile {
+        const proj = new Projectile(this, x, y, vx, vy, weaponType, this.worldPhysics, this.currentWind, {
+            onExplode: (expX, expY, radius, damage) => {
+                const expSounds = ['explosion1', 'explosion2', 'explosion3'];
+                const snd = expSounds[Math.floor(Math.random() * expSounds.length)];
+                this.sound.play(snd, { volume: 0.5 });
+                
+                this.handleExplosion(expX, expY, radius, damage);
+            },
+            onSpawnProjectile: (spX, spY, spVx, spVy, type) => {
+                this.spawnProjectile(spX, spY, spVx, spVy, type);
+            },
+            onSpawnFire: (fx, fy, amount, isNapalm) => {
+                for (let i = 0; i < amount; i++) {
+                    const fvx = (Math.random() - 0.5) * 14 * 0.8;
+                    const fvy = (Math.random() - 0.5) * 14 * 0.85;
+                    const fire = new FireParticle(this, fx, fy, fvx, fvy, isNapalm, this.worldPhysics);
+                    this.fireParticles.push(fire);
+                }
+            },
+            onSpawnPoison: (px, py, amount, isRad) => {
+                for (let i = 0; i < amount; i++) {
+                    const pvx = (Math.random() - 0.5) * 10;
+                    const pvy = (Math.random() - 0.5) * 10;
+                    const poison = new PoisonParticle(this, px, py, pvx, pvy, isRad, this.worldPhysics);
+                    this.poisonParticles.push(poison);
+                }
+            }
+        });
+        
+        this.projectiles.push(proj);
+        return proj;
     }
 
     private startTurnTimer() {
@@ -652,6 +681,24 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         for (const p of this.projectiles) {
             p.update(delta);
+        }
+
+        // Update fire particles
+        for (let i = this.fireParticles.length - 1; i >= 0; i--) {
+            const f = this.fireParticles[i];
+            f.update(delta, this.currentWind, this.worms);
+            if (!f.isActive) {
+                this.fireParticles.splice(i, 1);
+            }
+        }
+
+        // Update poison particles
+        for (let i = this.poisonParticles.length - 1; i >= 0; i--) {
+            const p = this.poisonParticles[i];
+            p.update(delta, this.currentWind, this.worms);
+            if (!p.isActive) {
+                this.poisonParticles.splice(i, 1);
+            }
         }
 
         this.updateTurnState();

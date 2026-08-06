@@ -24,6 +24,7 @@ export interface WeaponConfig {
     fireOnExplode: boolean;
     fireAmount: number;
     poisonOnExplode: boolean;
+    poisonOnExplodeRad?: boolean;
     poisonAmount: number;
     breaking: boolean;
     breakingType: string;

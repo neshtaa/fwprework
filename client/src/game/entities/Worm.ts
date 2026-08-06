@@ -29,6 +29,9 @@ export class Worm {
     private worldPhysics: WorldPhysics;
     public isActive: boolean = false;
 
+    public isPoisoned: boolean = false;
+    public poisonDamage: number = 0;
+
     constructor(scene: Phaser.Scene, x: number, y: number, color: number, team: number, worldPhysics: WorldPhysics, name: string) {
         this.x = x;
         this.y = y;
@@ -54,6 +57,14 @@ export class Worm {
         // Health bar
         this.healthBar = scene.add.graphics();
         this.drawHealthBar();
+    }
+
+    public applyPoison(amount: number) {
+        if (!this.isPoisoned || amount > this.poisonDamage) {
+            this.isPoisoned = true;
+            this.poisonDamage = amount;
+            // The actual damage should be applied every turn.
+        }
     }
 
     private drawHealthBar() {

@@ -5,6 +5,13 @@ import type { WeaponConfig } from '../data/weapons';
 
 import type { WeaponType } from '../data/weapons';
 
+export interface ProjectileCallbacks {
+    onExplode: (x: number, y: number, radius: number, damage: number) => void;
+    onSpawnProjectile: (x: number, y: number, vx: number, vy: number, weaponType: string) => void;
+    onSpawnFire: (x: number, y: number, amount: number, isNapalm: boolean) => void;
+    onSpawnPoison: (x: number, y: number, amount: number, isRad: boolean) => void;
+}
+
 export class Projectile {
     public sprite: Phaser.GameObjects.Sprite;
     public x: number;
@@ -12,21 +19,20 @@ export class Projectile {
     public vx: number;
     public vy: number;
     public isActive: boolean = true;
-    public weaponType: WeaponType;
+    public weaponType: string;
     public wind: number = 0;
     
     private worldPhysics: WorldPhysics;
+    private callbacks: ProjectileCallbacks;
     private config: WeaponConfig;
     private timer: number = 0;
-    private isPlanted: boolean = false;
+    public isPlanted: boolean = false;
+    private multiExplosionsLeft: number;
 
     // Shared physical constants
-    // Shared physical constants
-    public static readonly BASE_GRAVITY = 0.24;
+    public static readonly BASE_GRAVITY = 0.15;
     private static readonly FIXED_TIME_STEP = 1000 / 60; // 60 FPS target
     private physicsAccumulator: number = 0;
-
-    private onExplode: (x: number, y: number, radius: number, damage: number) => void;
 
     constructor(
         scene: Phaser.Scene, 
@@ -34,18 +40,19 @@ export class Projectile {
         y: number, 
         vx: number, 
         vy: number,
-        weaponType: WeaponType,
+        weaponType: string,
         worldPhysics: WorldPhysics,
         wind: number,
-        onExplode: (x: number, y: number, radius: number, damage: number) => void
+        callbacks: ProjectileCallbacks
     ) {
         this.x = x;
         this.y = y;
         this.weaponType = weaponType;
         this.worldPhysics = worldPhysics;
-        this.onExplode = onExplode;
+        this.callbacks = callbacks;
         
-        this.config = WEAPONS[weaponType];
+        this.config = WEAPONS[weaponType as WeaponType];
+        this.multiExplosionsLeft = this.config.multiplexplosions || 0;
         
         this.wind = this.config.affectedByWind ? wind : 0;
 
@@ -173,14 +180,54 @@ export class Projectile {
 
     private explode(x: number, y: number) {
         if (!this.isActive) return;
-        this.isActive = false;
         
-        this.onExplode(x, y, this.config.explosionRadius, this.config.damage);
-        this.destroy();
+        this.callbacks.onExplode(x, y, this.config.explosionRadius, this.config.damage);
+
+        if (this.multiExplosionsLeft > 0) {
+            this.multiExplosionsLeft--;
+            // Do not destroy, keep it active to explode again next tick!
+        } else {
+            // Apply special effects on the FINAL explosion
+            if (this.config.fireOnExplode || this.config.poisonOnExplode || this.config.poisonOnExplodeRad || this.config.breaking) {
+                if (this.config.fireOnExplode) {
+                    this.callbacks.onSpawnFire(x, y, this.config.fireAmount || 0, false); // napalm_fire not supported directly yet
+                }
+                
+                if (this.config.poisonOnExplode) {
+                    this.callbacks.onSpawnPoison(x, y, this.config.poisonAmount || 0, false);
+                }
+
+                if (this.config.poisonOnExplodeRad) {
+                    this.callbacks.onSpawnPoison(x, y, this.config.poisonAmount || 0, true);
+                }
+
+                if (this.config.breaking && this.config.breakingAmount) {
+                    const amount = this.config.breakingAmount;
+                    for (let i = 0; i < amount; i++) {
+                        // Original flash logic distributes velocities differently per weapon type,
+                        // but a general random explosion distribution works well for now:
+                        const vTheta = Math.random() * Math.PI * 2;
+                        const vMag = Math.random() * 5 + 2;
+                        let vx = this.vx * 0.1 + Math.cos(vTheta) * vMag;
+                        let vy = this.vy * 0.1 + Math.sin(vTheta) * vMag;
+                        
+                        // Slightly randomize positions
+                        const spawnX = x + (Math.random() - 0.5) * 4;
+                        const spawnY = y + (Math.random() - 0.5) * 4;
+
+                        this.callbacks.onSpawnProjectile(spawnX, spawnY, vx, vy, this.config.breakingType || "");
+                    }
+                }
+            }
+            
+            this.destroy();
+        }
     }
 
     public destroy() {
         this.isActive = false;
-        this.sprite.destroy();
+        if (this.sprite) {
+            this.sprite.destroy();
+        }
     }
 }
