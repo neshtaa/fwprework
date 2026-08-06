@@ -54,21 +54,15 @@ export class Projectile {
         const hasTexture = scene.textures.exists(textureKey);
         this.sprite = scene.add.sprite(x, y, hasTexture ? textureKey : 'bazooka_0');
         this.sprite.setOrigin(0.5, 0.5);
-        
-        if (this.config.stopOnImpact) {
-            this.vx = 0;
-            this.vy = 0;
-        } else {
-            this.vx = vx;
-            this.vy = vy;
-        }
+        this.vx = vx;
+        this.vy = vy;
 
         this.sprite.setScale(0.5);
     }
 
     public static simulateStep(x: number, y: number, vx: number, vy: number, wind: number, weaponType: string): { x: number, y: number, vx: number, vy: number } {
         const config = WEAPONS[weaponType as WeaponType];
-        const currentWind = config.affectedByWind ? wind : 0;
+        const currentWind = config.affectedByWind ? wind * (config.windMultiplier ?? 1.0) : 0;
         const newVy = vy + Projectile.BASE_GRAVITY * config.gravityMultiplier;
         const newVx = vx + currentWind;
         return { x: x + newVx, y: y + newVy, vx: newVx, vy: newVy };
@@ -111,30 +105,47 @@ export class Projectile {
                     if (this.config.explodeOnImpact) {
                         this.explode(hitResult.x, hitResult.y);
                         return;
-                    } else if (this.config.stopOnImpact) {
+                    } 
+                    
+                    if (this.config.reflect) {
                         this.x = hitResult.x;
                         this.y = hitResult.y;
-                        this.vx = 0;
-                        this.vy = 0;
-                        this.isPlanted = true;
-                        
+
+                        const reflectAxis = this.worldPhysics.reflect(this.x, this.y, this.vx, this.vy);
+                        if (reflectAxis === 0) {
+                            this.vx *= -1;
+                            this.vy *= -1;
+                        } else if (reflectAxis === 1) {
+                            this.vx *= -1;
+                        } else {
+                            this.vy *= -1;
+                        }
+
+                        this.vx = Math.abs(this.vx) < 0.1 ? 0 : this.vx * this.config.bounceX;
+                        this.vy = Math.abs(this.vy) < 0.1 ? 0 : this.vy * this.config.bounceY;
+
+                        // Ensure it's not stuck inside terrain
                         while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
                             this.y -= 1;
                         }
                     } else {
-                        // Bounce
+                        // Not reflecting -> just stops moving
                         this.x = hitResult.x;
                         this.y = hitResult.y;
-                        
-                        if (this.vy > 0) {
-                            this.vy = -this.vy * 0.5;
-                            this.vx = this.vx * 0.7;
-                        } else {
-                            this.vy = -this.vy * 0.5;
-                        }
+                        this.vx = 0;
+                        this.vy = 0;
                         
                         while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
                             this.y -= 1;
+                        }
+                    }
+
+                    if (this.vx === 0 && this.vy === 0) {
+                        if (this.config.restingExplode) {
+                            this.explode(this.x, this.y);
+                            return;
+                        } else {
+                            this.isPlanted = true;
                         }
                     }
                 } else {

@@ -85,4 +85,54 @@ export class WorldPhysics {
             }
         }
     }
+
+    public reflect(x: number, y: number, vx: number, vy: number): number {
+        const px = Math.round(x);
+        const py = Math.round(y);
+        
+        const m: number[][] = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+        m[1][1] = this.isSolid(px - 1, py - 1) ? 1 : 0;
+        m[1][2] = this.isSolid(px, py - 1) ? 1 : 0;
+        m[1][3] = this.isSolid(px + 1, py - 1) ? 1 : 0;
+        m[2][1] = this.isSolid(px - 1, py) ? 1 : 0;
+        m[2][2] = this.isSolid(px, py) ? 1 : 0;
+        m[2][3] = this.isSolid(px + 1, py) ? 1 : 0;
+        m[3][1] = this.isSolid(px - 1, py + 1) ? 1 : 0;
+        m[3][2] = this.isSolid(px, py + 1) ? 1 : 0;
+        m[3][3] = this.isSolid(px + 1, py + 1) ? 1 : 0;
+
+        if (vx < 0 && vy >= 0) {
+            if (m[3][1] >= 1 && m[2][3] >= 1 && m[1][1] <= 0 && m[1][2] <= 0) return 2;
+            if (m[2][1] >= 1 && m[2][3] >= 1 && m[1][1] <= 0 && m[1][2] <= 0) return 2;
+            if (m[2][3] >= 1 && m[2][1] <= 0 && m[1][1] <= 0 && m[1][2] <= 0) return 2;
+            if (m[1][2] >= 1 && m[3][2] >= 1 && m[2][3] <= 0 && m[3][3] <= 0) return 1;
+            if (m[1][2] >= 1 && m[3][2] <= 0 && m[2][3] <= 0 && m[3][3] <= 0) return 1;
+            return 0;
+        }
+        if (vx >= 0 && vy >= 0) {
+            if (m[3][3] >= 1 && m[2][1] >= 1 && m[1][3] <= 0 && m[1][2] <= 0) return 2;
+            if (m[2][1] >= 1 && m[2][3] >= 1 && m[1][3] <= 0 && m[1][2] <= 0) return 2;
+            if (m[2][1] >= 1 && m[2][3] <= 0 && m[1][3] <= 0 && m[1][2] <= 0) return 2;
+            if (m[1][2] >= 1 && m[3][2] >= 1 && m[2][1] <= 0 && m[3][1] <= 0) return 1;
+            if (m[1][2] >= 1 && m[3][2] <= 0 && m[2][1] <= 0 && m[3][1] <= 0) return 1;
+            return 0;
+        }
+        if (vx < 0 && vy < 0) {
+            if (m[1][1] >= 1 && m[3][2] >= 1 && m[1][3] <= 0 && m[2][3] <= 0) return 1;
+            if (m[1][2] >= 1 && m[3][2] >= 1 && m[1][3] <= 0 && m[2][3] <= 0) return 1;
+            if (m[3][2] >= 1 && m[1][2] <= 0 && m[1][3] <= 0 && m[2][3] <= 0) return 1;
+            if (m[2][1] >= 1 && m[2][3] >= 1 && m[3][1] <= 0 && m[3][2] <= 0) return 2;
+            if (m[2][1] >= 1 && m[2][3] <= 0 && m[3][1] <= 0 && m[3][2] <= 0) return 2;
+            return 0;
+        }
+        if (vx >= 0 && vy < 0) {
+            if (m[1][3] >= 1 && m[3][2] >= 1 && m[1][1] <= 0 && m[2][1] <= 0) return 1;
+            if (m[1][2] >= 1 && m[3][2] >= 1 && m[1][1] <= 0 && m[2][1] <= 0) return 1;
+            if (m[3][2] >= 1 && m[1][2] <= 0 && m[1][1] <= 0 && m[2][1] <= 0) return 1;
+            if (m[2][3] >= 1 && m[2][1] >= 1 && m[3][3] <= 0 && m[3][2] <= 0) return 2;
+            if (m[2][3] >= 1 && m[2][1] <= 0 && m[3][3] <= 0 && m[3][2] <= 0) return 2;
+            return 0;
+        }
+        return 0;
+    }
 }
