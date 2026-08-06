@@ -23,7 +23,9 @@ export class PoisonParticle {
         this.isRad = isRad;
         this.worldPhysics = worldPhysics;
         
-        // Use a simple graphics or texture for poison
+        // In the original Flash game, poison was drawn via pixels.
+        // Since we don't have dedicated PNG assets for them, we use a tinted fallback sprite.
+        // Performance note: checkHitLine per frame is fast enough for now.
         const textureKey = isRad ? 'poison_rad' : 'poison';
         this.sprite = scene.add.sprite(x, y, scene.textures.exists(textureKey) ? textureKey : 'bazooka_0'); // fallback
         if (!scene.textures.exists(textureKey)) {

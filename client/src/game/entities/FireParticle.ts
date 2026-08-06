@@ -23,7 +23,11 @@ export class FireParticle {
         this.isNapalm = isNapalm;
         this.worldPhysics = worldPhysics;
         
-        // Use a simple graphics or texture for fire
+        // In the original Flash game, fire and poison were drawn directly via pixels to a BitmapData (FireMap).
+        // Since we don't have dedicated PNG assets for them, we use a tinted fallback sprite.
+        // Performance note: checkHitLine per frame is fast enough for ~100 particles, 
+        // but if we ever implement full napalm strikes with 1000s of particles, 
+        // we may need to optimize collision checks (e.g. check every N frames or use a grid).
         const textureKey = isNapalm ? 'napalm_fire' : 'fire';
         this.sprite = scene.add.sprite(x, y, scene.textures.exists(textureKey) ? textureKey : 'bazooka_0'); // fallback
         if (!scene.textures.exists(textureKey)) {
