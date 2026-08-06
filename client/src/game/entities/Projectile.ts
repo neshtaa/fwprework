@@ -184,6 +184,9 @@ export class Projectile {
         this.callbacks.onExplode(x, y, this.config.explosionRadius, this.config.damage);
 
         if (this.multiExplosionsLeft > 0) {
+            // Original Flash game does not use any timer for MULTIPLEXPLOSIONS.
+            // If the projectile is inside terrain, it will trigger an explosion every frame
+            // until multiExplosionsLeft reaches 0, which acts as a drilling mechanic.
             this.multiExplosionsLeft--;
             // Do not destroy, keep it active to explode again next tick!
         } else {
