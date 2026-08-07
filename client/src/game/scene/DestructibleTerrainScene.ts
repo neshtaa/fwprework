@@ -4,6 +4,7 @@ import { Worm } from '../entities/Worm';
 import { Projectile } from '../entities/Projectile';
 import { WEAPONS } from '../data/weapons';
 import type { WeaponType } from '../data/weapons';
+import { GUNS_CONFIG } from '../data/GunsConfig';
 import { AIBot } from '../entities/AIBot';
 import { FireParticle } from '../entities/FireParticle';
 import { PoisonParticle } from '../entities/PoisonParticle';
@@ -48,6 +49,18 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     // Inventory: teamId -> { weaponKey -> count }
     private teamInventories: Record<number, Record<string, number>> = {};
     private aiBot!: AIBot;
+
+    private activeBurst: {
+        vx: number, vy: number,
+        weaponType: string,
+        bulletsLeft: number,
+        intervalMs: number,
+        spreadDegrees: number,
+        speed: number,
+        timer: number,
+        x: number, y: number
+    } | null = null;
+    private remainingShots: number = 0;
 
 
     constructor() {
@@ -386,11 +399,41 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         }
         this.updateWeaponUI();
         
-        const proj = this.spawnProjectile(activeWorm.x, activeWorm.y, vx, vy, currentWeapon);
-        this.cameras.main.startFollow(proj.sprite);
+        const gunConfig = GUNS_CONFIG[currentWeapon];
 
-        this.waitingForTurnEnd = true;
-        this.turnTimeLeft = 0; 
+        if (gunConfig) {
+            this.activeBurst = {
+                vx, vy,
+                weaponType: currentWeapon,
+                bulletsLeft: gunConfig.bulletAmount,
+                intervalMs: gunConfig.bulletIntervalMs,
+                spreadDegrees: gunConfig.spreadDegrees,
+                speed: gunConfig.speed,
+                timer: 0,
+                x: activeWorm.x,
+                y: activeWorm.y
+            };
+            
+            if (gunConfig.shotsPerTurn && gunConfig.shotsPerTurn > 1 && this.remainingShots === 0) {
+                 this.remainingShots = gunConfig.shotsPerTurn;
+            }
+            if (this.remainingShots > 0) {
+                 this.remainingShots--;
+            }
+            if (this.remainingShots <= 0) {
+                 this.waitingForTurnEnd = true;
+                 this.turnTimeLeft = 0; 
+            } else {
+                 this.turnTimeLeft = 5; // Give 5 seconds for the next shot
+                 this.startTurnTimer(); // restart timer internally
+                 this.turnTimeLeft = 5; // override length
+            }
+        } else {
+            const proj = this.spawnProjectile(activeWorm.x, activeWorm.y, vx, vy, currentWeapon);
+            this.cameras.main.startFollow(proj.sprite);
+            this.waitingForTurnEnd = true;
+            this.turnTimeLeft = 0; 
+        }
     }
 
     private spawnProjectile(x: number, y: number, vx: number, vy: number, weaponType: string): Projectile {
@@ -660,6 +703,41 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     update(_time: number, delta: number) {
         if (this.isGameOver) return;
         
+        if (this.activeBurst) {
+            this.activeBurst.timer -= delta;
+            while (this.activeBurst.timer <= 0 && this.activeBurst.bulletsLeft > 0) {
+                this.activeBurst.bulletsLeft--;
+                this.activeBurst.timer += this.activeBurst.intervalMs;
+                
+                // Calculate spread
+                let fireVx = this.activeBurst.vx;
+                let fireVy = this.activeBurst.vy;
+                const speed = Math.sqrt(fireVx * fireVx + fireVy * fireVy);
+                
+                if (this.activeBurst.spreadDegrees > 0) {
+                    const currentAngle = Math.atan2(fireVy, fireVx);
+                    const spreadRad = this.activeBurst.spreadDegrees * (Math.PI / 180);
+                    const newAngle = currentAngle + (Math.random() - 0.5) * spreadRad;
+                    fireVx = Math.cos(newAngle) * Math.max(speed, this.activeBurst.speed);
+                    fireVy = Math.sin(newAngle) * Math.max(speed, this.activeBurst.speed);
+                }
+                
+                // Adjust speed
+                if (this.activeBurst.speed > 0 && speed > 0 && this.activeBurst.spreadDegrees === 0) {
+                    fireVx = (fireVx / speed) * this.activeBurst.speed;
+                    fireVy = (fireVy / speed) * this.activeBurst.speed;
+                }
+
+                const proj = this.spawnProjectile(this.activeBurst.x, this.activeBurst.y, fireVx, fireVy, this.activeBurst.weaponType);
+                this.cameras.main.startFollow(proj.sprite);
+                this.sound.play('throwing', { volume: 0.3 });
+            }
+            
+            if (this.activeBurst.bulletsLeft <= 0) {
+                this.activeBurst = null;
+            }
+        }
+
         if (this.worms.length > 0) {
             const activeWorm = this.worms[this.activeWormIndex];
             
@@ -763,6 +841,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             activeWorm.isActive = true;
             this.cameras.main.startFollow(activeWorm.sprite);
             this.startTurnTimer();
+            this.remainingShots = 0;
             this.updateUI();
 
             // Let AI take turn if team != 1
