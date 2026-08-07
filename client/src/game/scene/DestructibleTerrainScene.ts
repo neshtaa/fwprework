@@ -61,6 +61,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         x: number, y: number
     } | null = null;
     private remainingShots: number = 0;
+    private airStrikeDirection: number = 1; // 1 = right, -1 = left
 
 
     constructor() {
@@ -364,6 +365,21 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const activeWorm = this.worms[this.activeWormIndex];
         const worldCoords = this.screenToWorld(pointer.worldX, pointer.worldY);
         
+        const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
+        
+        if (currentWeapon) {
+            const activeTeam = activeWorm.team;
+            const inventory = this.teamInventories[activeTeam];
+            if (inventory[currentWeapon] === 0) return; // Out of ammo, can't shoot
+            
+            const config = WEAPONS[currentWeapon];
+            if (config.wptype === 'a') {
+                this.sound.play('throwing', { volume: 0.6 });
+                this.fireWeapon(0, 0, worldCoords.x, worldCoords.y);
+                return;
+            }
+        }
+
         const dx = worldCoords.x - activeWorm.x;
         const dy = worldCoords.y - activeWorm.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -372,21 +388,13 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const vx = (dx / dist) * speed;
         const vy = (dy / dist) * speed;
 
-        const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
-
-        if (currentWeapon) {
-            const activeTeam = activeWorm.team;
-            const inventory = this.teamInventories[activeTeam];
-            if (inventory[currentWeapon] === 0) return; // Out of ammo, can't shoot
-        }
-
         this.sound.play('throwing', { volume: 0.6 });
         
         activeWorm.setFacing(vx > 0);
         this.fireWeapon(vx, vy);
     }
     
-    public fireWeapon(vx: number, vy: number) {
+    public fireWeapon(vx: number, vy: number, targetX?: number, targetY?: number) {
         const activeWorm = this.worms[this.activeWormIndex];
         const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
         
@@ -398,6 +406,48 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             inventory[currentWeapon]--;
         }
         this.updateWeaponUI();
+        
+        const config = WEAPONS[currentWeapon];
+        
+        if (config.wptype === 'a' && targetX !== undefined && targetY !== undefined) {
+            let strikeAmount = 5;
+            if (currentWeapon === 'banana_strike' || currentWeapon === 'holy_strike') strikeAmount = 3;
+            const isOrbit = currentWeapon === 'orbit_strike';
+            
+            const startY = isOrbit ? -149 : -200;
+            const gravity = Projectile.BASE_GRAVITY * config.gravityMultiplier;
+            const dir = this.airStrikeDirection === 1 ? 1 : -1;
+            const vxBase = dir * 6;
+            const vyBase = isOrbit ? 42 : 0;
+            
+            let simXOffset = 0;
+            let simY = startY;
+            let simVy = vyBase;
+            
+            // Simulate falling to find horizontal drift
+            while (simY < targetY) {
+                if (!isOrbit) simVy += gravity;
+                simY += simVy;
+                simXOffset += vxBase;
+            }
+            
+            const centerSpawnX = targetX - simXOffset;
+            const spread = isOrbit ? 50 : 30;
+            const halfAmount = Math.ceil(strikeAmount / 2);
+
+            for (let i = 1; i <= strikeAmount; i++) {
+                const px = centerSpawnX + spread * (i - halfAmount);
+                const py = startY;
+                const projType = currentWeapon === 'mine_strike' ? 'mine' : currentWeapon;
+                const proj = this.spawnProjectile(px, py, vxBase, vyBase, projType);
+                if (i === halfAmount) {
+                     this.cameras.main.startFollow(proj.sprite);
+                }
+            }
+            this.waitingForTurnEnd = true;
+            this.turnTimeLeft = 0; 
+            return;
+        }
         
         const gunConfig = GUNS_CONFIG[currentWeapon];
 
@@ -438,6 +488,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
     private spawnProjectile(x: number, y: number, vx: number, vy: number, weaponType: string): Projectile {
         const proj = new Projectile(this, x, y, vx, vy, weaponType, this.worldPhysics, this.currentWind, {
+            getWorms: () => this.worms,
             onExplode: (expX, expY, radius, damage) => {
                 const expSounds = ['explosion1', 'explosion2', 'explosion3'];
                 const snd = expSounds[Math.floor(Math.random() * expSounds.length)];
@@ -593,8 +644,18 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const activeWorm = this.worms[this.activeWormIndex];
         if (activeWorm.team !== 1) return;
         if (activeWorm.health > 0 && !this.waitingForTurnEnd) {
-            if (this.cursors.left.isDown) activeWorm.moveLeft();
-            else if (this.cursors.right.isDown) activeWorm.moveRight();
+            const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
+            const config = currentWeapon ? WEAPONS[currentWeapon] : null;
+
+            if (this.isAiming) {
+                if (config?.wptype === 'a') {
+                    if (this.cursors.left.isDown) this.airStrikeDirection = -1;
+                    if (this.cursors.right.isDown) this.airStrikeDirection = 1;
+                }
+            } else {
+                if (this.cursors.left.isDown) activeWorm.moveLeft();
+                else if (this.cursors.right.isDown) activeWorm.moveRight();
+            }
             
             if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) activeWorm.jump();
         }
@@ -603,12 +664,34 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private updateAiming(delta: number) {
         if (!this.isAiming) return;
         
-        this.aimPower = Math.min(100, this.aimPower + (delta / 10)); // Max out in 1 sec
-        getRequiredElement('power-val').innerText = Math.floor(this.aimPower).toString();
-        
         const activeWorm = this.worms[this.activeWormIndex];
         const pointer = this.input.activePointer;
         const worldCoords = this.screenToWorld(pointer.worldX, pointer.worldY);
+        
+        const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
+        const config = currentWeapon ? WEAPONS[currentWeapon] : null;
+
+        if (config?.wptype === 'a') {
+            this.aimCrosshair.setPosition(pointer.worldX, pointer.worldY);
+            this.trajectoryGraphics.clear();
+            
+            // Draw direction indicators
+            this.trajectoryGraphics.lineStyle(2, 0xff0000, 1);
+            this.trajectoryGraphics.beginPath();
+            const dirX = this.airStrikeDirection === 1 ? 50 : -50;
+            this.trajectoryGraphics.moveTo(pointer.worldX, pointer.worldY);
+            this.trajectoryGraphics.lineTo(pointer.worldX + dirX, pointer.worldY);
+            
+            // arrow head
+            this.trajectoryGraphics.lineTo(pointer.worldX + dirX - (this.airStrikeDirection === 1 ? 10 : -10), pointer.worldY - 10);
+            this.trajectoryGraphics.moveTo(pointer.worldX + dirX, pointer.worldY);
+            this.trajectoryGraphics.lineTo(pointer.worldX + dirX - (this.airStrikeDirection === 1 ? 10 : -10), pointer.worldY + 10);
+            this.trajectoryGraphics.strokePath();
+            return;
+        }
+
+        this.aimPower = Math.min(100, this.aimPower + (delta / 10)); // Max out in 1 sec
+        getRequiredElement('power-val').innerText = Math.floor(this.aimPower).toString();
         
         const dx = worldCoords.x - activeWorm.x;
         const dy = worldCoords.y - activeWorm.y;

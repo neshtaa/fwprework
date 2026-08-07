@@ -4,12 +4,14 @@ import { WEAPONS } from '../data/weapons';
 import type { WeaponConfig } from '../data/weapons';
 
 import type { WeaponType } from '../data/weapons';
+import type { Worm } from './Worm';
 
 export interface ProjectileCallbacks {
     onExplode: (x: number, y: number, radius: number, damage: number) => void;
     onSpawnProjectile: (x: number, y: number, vx: number, vy: number, weaponType: string) => void;
     onSpawnFire: (x: number, y: number, amount: number, isNapalm: boolean) => void;
     onSpawnPoison: (x: number, y: number, amount: number, isRad: boolean) => void;
+    getWorms?: () => Worm[];
 }
 
 export class Projectile {
@@ -28,6 +30,13 @@ export class Projectile {
     private timer: number = 0;
     public isPlanted: boolean = false;
     private multiExplosionsLeft: number;
+
+    // Mine logic
+    private isMine: boolean = false;
+    private mineArmingTimer: number = 0;
+    private mineArmed: boolean = false;
+    private mineTriggered: boolean = false;
+    private mineFuseTimer: number = 0;
 
     // Shared physical constants
     public static readonly BASE_GRAVITY = 0.24;
@@ -54,6 +63,10 @@ export class Projectile {
         this.config = WEAPONS[weaponType as WeaponType];
         this.multiExplosionsLeft = this.config.multiplexplosions || 0;
         
+        if (this.config.wptype === 'e' && !this.config.explodeOnImpact && !this.config.timingExplode && !this.config.restingExplode && !this.config.instantExplode) {
+            this.isMine = true;
+        }
+
         this.wind = this.config.affectedByWind ? wind : 0;
 
         // Use the weaponType as the texture key for now, fallback to bazooka_0
@@ -162,6 +175,43 @@ export class Projectile {
 
                 if (this.isPlanted || !this.isActive) {
                     break;
+                }
+            }
+        }
+        
+        if (this.isMine && this.isPlanted && this.isActive) {
+            if (!this.mineArmed) {
+                this.mineArmingTimer += delta;
+                if (this.mineArmingTimer >= 2800) { // 2.8s arming delay
+                    this.mineArmed = true;
+                }
+            } else if (!this.mineTriggered) {
+                // Check trigger radius
+                if (this.callbacks.getWorms) {
+                    const worms = this.callbacks.getWorms();
+                    for (const worm of worms) {
+                        if (worm.health > 0) {
+                            const dist = Math.sqrt(Math.pow(worm.x - this.x, 2) + Math.pow(worm.y - this.y, 2));
+                            if (dist <= 48) {
+                                this.mineTriggered = true;
+                                this.sprite.setTint(0xff0000); // Visual indicator for triggering (beeping)
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                this.mineFuseTimer += delta;
+                // Beep effect: toggle tint every 250ms
+                if (Math.floor(this.mineFuseTimer / 250) % 2 === 0) {
+                    this.sprite.setTint(0xff0000);
+                } else {
+                    this.sprite.clearTint();
+                }
+                
+                if (this.mineFuseTimer >= 3000) { // 3 second fuse
+                    this.explode(this.x, this.y);
+                    return;
                 }
             }
         }
