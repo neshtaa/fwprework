@@ -448,6 +448,90 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.turnTimeLeft = 0; 
             return;
         }
+
+        if (config.wptype === 'c' && currentWeapon !== 'fireball') {
+            // Melee attack
+            const dir = activeWorm.facingRight ? 1 : -1;
+            
+            // Adjust hit distance based on weapon
+            let offsetX = 0;
+            if (currentWeapon === 'baseball_bat' || currentWeapon === 'power_bat') offsetX = activeWorm.facingRight ? 23 : -18;
+            else if (currentWeapon === 'battle_axe' || currentWeapon === 'power_axe') offsetX = activeWorm.facingRight ? 25 : -22;
+            else if (currentWeapon === 'prod' || currentWeapon === 'shocker') offsetX = activeWorm.facingRight ? 15 : -12;
+            else offsetX = activeWorm.facingRight ? 20 : -20; // default for others like firepunch
+            
+            const hitX = activeWorm.x + offsetX;
+            const hitY = activeWorm.y;
+
+            let hitSomething = false;
+            
+            // Calculate aim vectors (for bat)
+            const dist = Math.sqrt(vx * vx + vy * vy);
+            const dirX = dist > 0 ? (vx / dist) : dir;
+            const dirY = dist > 0 ? (vy / dist) : 0;
+            
+            for (const worm of this.worms) {
+                if (worm.health > 0 && worm !== activeWorm) {
+                    if (Math.abs(worm.x - hitX) <= 30 && Math.abs(worm.y - hitY) <= 36) {
+                        
+                        let damage = config.damage;
+                        let pushVx = 0;
+                        let pushVy = 0;
+
+                        if (currentWeapon === 'baseball_bat') {
+                            pushVx = dirX * 9.2;
+                            pushVy = dirY * 9.2;
+                        } else if (currentWeapon === 'power_bat') {
+                            damage = 60;
+                            pushVx = dirX * 9.2;
+                            pushVy = dirY * 9.2;
+                        } else if (currentWeapon === 'battle_axe') {
+                            damage = worm.health > 400 ? 200 : Math.floor(worm.health / 2);
+                            pushVy = 10;
+                        } else if (currentWeapon === 'power_axe') {
+                            damage = worm.health > 600 ? 300 : Math.floor(worm.health / 2);
+                            pushVy = 10;
+                        } else if (currentWeapon === 'prod') {
+                            pushVx = dir * 2.3;
+                            pushVy = -2.3;
+                        } else if (currentWeapon === 'shocker') {
+                            pushVx = dir * 2.3;
+                            pushVy = -2.3;
+                        } else if (currentWeapon === 'firepunch' || currentWeapon === 'kamikaze') {
+                            pushVx = dir * 2;
+                            pushVy = -4;
+                        }
+                        
+                        worm.takeDamage(damage);
+                        if (pushVx !== 0 || pushVy !== 0) {
+                            worm.vx += pushVx;
+                            worm.vy += pushVy;
+                            worm.isGrounded = false;
+                        }
+                        hitSomething = true;
+                    }
+                }
+            }
+            
+            // Firepunch actually moves the worm too
+            if (currentWeapon === 'firepunch') {
+                activeWorm.vy = -4.4;
+                activeWorm.isGrounded = false;
+            } else if (currentWeapon === 'kamikaze') {
+                // Kamikaze is complex, we just deal damage and let the active worm die
+                activeWorm.takeDamage(activeWorm.health);
+            }
+
+            if (hitSomething) {
+                this.sound.play('baseball_hit', { volume: 0.6 }); 
+            } else if (currentWeapon === 'baseball_bat' || currentWeapon === 'power_bat') {
+                this.sound.play('baseball_miss', { volume: 0.6 });
+            }
+            
+            this.waitingForTurnEnd = true;
+            this.turnTimeLeft = 0;
+            return;
+        }
         
         const gunConfig = GUNS_CONFIG[currentWeapon];
 
