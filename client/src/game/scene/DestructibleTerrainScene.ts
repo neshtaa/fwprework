@@ -1026,8 +1026,12 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private nextTurn() {
         if (this.worms.length === 0 || this.isGameOver) return;
         
+        // Reset utilities from previous turn
+        Projectile.BASE_GRAVITY = 0.24;
+        
         // Apply poison DoT on turn boundary
         for (const w of this.worms) {
+            w.speedMultiplier = 1; // Reset fast walk
             if (w.health > 0) w.applyPoisonTick();
         }
 
