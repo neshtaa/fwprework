@@ -1052,5 +1052,65 @@
         50
       ]
     }
+  },
+  "assault_10": {
+    "dmap": "/maps/assault_10_dmap.png"
+  },
+  "assault_11": {
+    "dmap": "/maps/assault_11_dmap.png"
+  },
+  "assault_12": {
+    "dmap": "/maps/assault_12_dmap.png"
+  },
+  "assault_13": {
+    "dmap": "/maps/assault_13_dmap.png"
+  },
+  "assault_14": {
+    "dmap": "/maps/assault_14_dmap.png"
+  },
+  "assault_15": {
+    "dmap": "/maps/assault_15_dmap.png"
+  },
+  "assault_16": {
+    "dmap": "/maps/assault_16_dmap.png"
+  },
+  "assault_17": {
+    "dmap": "/maps/assault_17_dmap.png"
+  },
+  "assault_2": {
+    "dmap": "/maps/assault_2_dmap.png"
+  },
+  "assault_3": {
+    "dmap": "/maps/assault_3_dmap.png"
+  },
+  "assault_4": {
+    "dmap": "/maps/assault_4_dmap.png"
+  },
+  "assault_5": {
+    "dmap": "/maps/assault_5_dmap.png"
+  },
+  "assault_6": {
+    "dmap": "/maps/assault_6_dmap.png"
+  },
+  "assault_7": {
+    "dmap": "/maps/assault_7_dmap.png"
+  },
+  "assault_8": {
+    "dmap": "/maps/assault_8_dmap.png"
+  },
+  "assault_9": {
+    "dmap": "/maps/assault_9_dmap.png"
+  },
+  "boss_10": {
+    "dmap": "/maps/boss_10_dmap.png"
+  },
+  "boss_11": {
+    "dmap": "/maps/boss_11_dmap.png"
+  },
+  "boss_12": {
+    "dmap": "/maps/boss_12_dmap.png"
+  },
+  "boss_13": {
+    "dmap": "/maps/boss_13_dmap.png"
   }
 }
