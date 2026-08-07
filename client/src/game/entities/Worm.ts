@@ -75,6 +75,12 @@ export class Worm {
             } else if (this.health > 1) {
                 this.takeDamage(this.health - 1); // Poison never kills, leaves at 1 HP
             }
+
+            this.poisonDamage--;
+            if (this.poisonDamage <= 0) {
+                this.poisonDamage = 0;
+                this.isPoisoned = false;
+            }
         }
     }
 

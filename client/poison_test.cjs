@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+
 (async () => {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
@@ -36,12 +37,15 @@ const { chromium } = require('playwright');
     console.log("Fired poison_bazooka!");
     await page.waitForTimeout(5000); // wait for explosion and poison application
 
-    const targetWormState = await page.evaluate(() => {
-        const scene = window.__GAME__.scene.scenes[0];
-        const targetWorm = scene.worms.find(w => w.team !== 1);
-        return { hp: targetWorm.health, isPoisoned: targetWorm.isPoisoned, nextPoisonDamage: targetWorm.nextPoisonDamage, poisonDamage: targetWorm.poisonDamage };
-    });
+    const getTargetState = async () => {
+        return await page.evaluate(() => {
+            const scene = window.__GAME__.scene.scenes[0];
+            const targetWorm = scene.worms.find(w => w.team !== 1);
+            return { hp: targetWorm.health, isPoisoned: targetWorm.isPoisoned, nextPoisonDamage: targetWorm.nextPoisonDamage, poisonDamage: targetWorm.poisonDamage };
+        });
+    };
 
+    let targetWormState = await getTargetState();
     console.log("Before turn boundary:", targetWormState);
 
     // Skip turns to trigger poison tick
@@ -49,20 +53,52 @@ const { chromium } = require('playwright');
         const scene = window.__GAME__.scene.scenes[0];
         scene.nextTurn();
     });
-    
     await page.waitForTimeout(500);
 
-    const postTurnState = await page.evaluate(() => {
+    let stateAfterT1 = await getTargetState();
+    console.log("After turn 1 boundary:", stateAfterT1);
+
+    // Skip another turn
+    await page.evaluate(() => {
+        const scene = window.__GAME__.scene.scenes[0];
+        scene.nextTurn();
+    });
+    await page.waitForTimeout(500);
+
+    let stateAfterT2 = await getTargetState();
+    console.log("After turn 2 boundary:", stateAfterT2);
+
+    let success = true;
+    if (stateAfterT1.poisonDamage !== targetWormState.poisonDamage - 1 && stateAfterT1.poisonDamage !== 0) {
+        console.error("Poison damage did not decay by 1 in T1!");
+        success = false;
+    }
+    if (stateAfterT2.poisonDamage !== stateAfterT1.poisonDamage - 1 && stateAfterT2.poisonDamage !== 0) {
+        console.error("Poison damage did not decay by 1 in T2!");
+        success = false;
+    }
+    
+    // Test if poison wears off
+    await page.evaluate(() => {
         const scene = window.__GAME__.scene.scenes[0];
         const targetWorm = scene.worms.find(w => w.team !== 1);
-        return { hp: targetWorm.health, isPoisoned: targetWorm.isPoisoned, nextPoisonDamage: targetWorm.nextPoisonDamage, poisonDamage: targetWorm.poisonDamage };
+        targetWorm.poisonDamage = 1; // Artificially set to 1
+        scene.nextTurn();
     });
+    await page.waitForTimeout(500);
+    
+    let stateAfterT3 = await getTargetState();
+    console.log("After turn 3 boundary (artificially set to 1):", stateAfterT3);
+    
+    if (stateAfterT3.poisonDamage !== 0 || stateAfterT3.isPoisoned !== false) {
+        console.error("Poison did not clear completely!");
+        success = false;
+    }
 
-    console.log("After turn boundary:", postTurnState);
-    if(postTurnState.hp < targetWormState.hp) {
-        console.log("POISON TEST PASSED!");
+    if (success) {
+        console.log("POISON DECAY TEST PASSED!");
     } else {
-        console.error("POISON TEST FAILED!");
+        console.error("POISON DECAY TEST FAILED!");
         process.exit(1);
     }
     
