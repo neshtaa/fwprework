@@ -57,6 +57,17 @@ export class WorldPhysics {
         return { hit: false, x: endX, y: endY };
     }
 
+    public checkTeleport(x: number, y: number): boolean {
+        for (let i = -3; i <= 3; i++) {
+            for (let j = -9; j <= 9; j++) {
+                if (this.isSolid(x + i, y + j)) {
+                    return false; // Solid terrain found, teleport invalid
+                }
+            }
+        }
+        return true; // Area is clear
+    }
+
     public eraseCircle(x: number, y: number, radius: number) {
         this.ctx.save();
         this.ctx.globalCompositeOperation = 'destination-out';

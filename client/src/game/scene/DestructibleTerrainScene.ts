@@ -378,6 +378,19 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 this.fireWeapon(0, 0, worldCoords.x, worldCoords.y);
                 return;
             }
+            if (config.wptype === 'u') { // Utilities like Teleport, Medikit, etc.
+                const isTeleport = currentWeapon === 'teleport' || currentWeapon === 'upg_teleport' || currentWeapon === 'upg_teleport2';
+                
+                if (isTeleport) {
+                    if (this.worldPhysics.checkTeleport(worldCoords.x, worldCoords.y)) {
+                        this.fireWeapon(0, 0, worldCoords.x, worldCoords.y);
+                    }
+                } else {
+                    // Non-targeted utilities (skip_go, medikit, etc)
+                    this.fireWeapon(0, 0);
+                }
+                return;
+            }
         }
 
         const dx = worldCoords.x - activeWorm.x;
@@ -447,6 +460,53 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.waitingForTurnEnd = true;
             this.turnTimeLeft = 0; 
             return;
+        }
+
+        if (config.wptype === 'u') {
+            if (currentWeapon === 'skip_go') {
+                this.waitingForTurnEnd = true;
+                this.turnTimeLeft = 0;
+                return;
+            } else if (currentWeapon === 'low_gravity') {
+                Projectile.BASE_GRAVITY = 0.12; // Modifies globally for the turn (or forever?)
+                this.sound.play('throwing', { volume: 0.6 });
+                this.waitingForTurnEnd = true;
+                this.turnTimeLeft = 0;
+                return;
+            } else if (currentWeapon === 'fast_walk') {
+                activeWorm.speedMultiplier = 2; // Need to add to Worm.ts
+                this.sound.play('throwing', { volume: 0.6 });
+                this.waitingForTurnEnd = true;
+                this.turnTimeLeft = 0;
+                return;
+            } else if (currentWeapon === 'medikit') {
+                activeWorm.takeDamage(-50); // Heals 50
+                this.sound.play('throwing', { volume: 0.6 });
+                this.waitingForTurnEnd = true;
+                this.turnTimeLeft = 0;
+                return;
+            } else if (currentWeapon === 'super_medikit') {
+                activeWorm.takeDamage(-100); // Heals 100
+                activeWorm.isPoisoned = false;
+                activeWorm.poisonDamage = 0;
+                activeWorm.nextPoisonDamage = 0;
+                this.sound.play('throwing', { volume: 0.6 });
+                this.waitingForTurnEnd = true;
+                this.turnTimeLeft = 0;
+                return;
+            } else if (targetX !== undefined && targetY !== undefined && (currentWeapon === 'teleport' || currentWeapon === 'upg_teleport' || currentWeapon === 'upg_teleport2')) {
+                // Teleport execution
+                activeWorm.x = targetX;
+                activeWorm.y = targetY;
+                activeWorm.vx = 0;
+                activeWorm.vy = 0;
+                activeWorm.isGrounded = false;
+                
+                // Wait for end of turn
+                this.waitingForTurnEnd = true;
+                this.turnTimeLeft = 0;
+                return;
+            }
         }
 
         if (config.wptype === 'c' && currentWeapon !== 'fireball') {

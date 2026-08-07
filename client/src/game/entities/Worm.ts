@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { WorldPhysics } from '../core/WorldPhysics';
+import { Projectile } from './Projectile';
 
 export class Worm {
     public sprite: Phaser.GameObjects.Sprite; 
@@ -18,13 +19,14 @@ export class Worm {
     public isGrounded: boolean = false;
     
     // Constants matching the game
-    private gravity: number = 0.24;
+    private get gravity(): number { return Projectile.BASE_GRAVITY; }
     private maxFallSpeed: number = 10;
     private moveSpeed: number = 1.5;
     private jumpForceY: number = -3;
     private jumpForceX: number = 2;
     
     // State
+    public speedMultiplier: number = 1;
     public facingRight: boolean = true;
     private worldPhysics: WorldPhysics;
     public isActive: boolean = false;
@@ -200,17 +202,15 @@ export class Worm {
     }
 
     public moveLeft() {
-        if (this.isGrounded) {
-            this.vx = -this.moveSpeed;
-            this.setFacing(false);
-        }
+        if (!this.isGrounded) return;
+        this.vx = -this.moveSpeed * this.speedMultiplier;
+        this.setFacing(false);
     }
 
     public moveRight() {
-        if (this.isGrounded) {
-            this.vx = this.moveSpeed;
-            this.setFacing(true);
-        }
+        if (!this.isGrounded) return;
+        this.vx = this.moveSpeed * this.speedMultiplier;
+        this.setFacing(true);
     }
 
     public jump() {
