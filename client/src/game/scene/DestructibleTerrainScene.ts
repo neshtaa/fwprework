@@ -643,6 +643,18 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private handlePlayerInput() {
         const activeWorm = this.worms[this.activeWormIndex];
         if (activeWorm.team !== 1) return;
+
+        if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+            let detonatedAnimal = false;
+            for (const proj of this.projectiles) {
+                if (proj.isActive && proj.isAnimal) {
+                    proj.explode(proj.x, proj.y);
+                    detonatedAnimal = true;
+                }
+            }
+            if (detonatedAnimal) return;
+        }
+
         if (activeWorm.health > 0 && !this.waitingForTurnEnd) {
             const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
             const config = currentWeapon ? WEAPONS[currentWeapon] : null;

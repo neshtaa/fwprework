@@ -38,6 +38,10 @@ export class Projectile {
     private mineTriggered: boolean = false;
     private mineFuseTimer: number = 0;
 
+    // Animal logic
+    public isAnimal: boolean = false;
+    private animalDir: number = 1;
+
     // Shared physical constants
     public static readonly BASE_GRAVITY = 0.24;
     private static readonly FIXED_TIME_STEP = 1000 / 60; // 60 FPS target
@@ -65,6 +69,11 @@ export class Projectile {
         
         if (this.config.wptype === 'e' && !this.config.explodeOnImpact && !this.config.timingExplode && !this.config.restingExplode && !this.config.instantExplode) {
             this.isMine = true;
+        }
+        
+        if (this.config.wptype === 'l') {
+            this.isAnimal = true;
+            this.animalDir = vx >= 0 ? 1 : -1;
         }
 
         this.wind = this.config.affectedByWind ? wind : 0;
@@ -127,7 +136,26 @@ export class Projectile {
                         return;
                     } 
                     
-                    if (this.config.reflect) {
+                    if (this.isAnimal) {
+                        this.x = hitResult.x;
+                        this.y = hitResult.y;
+                        
+                        while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
+                            this.y -= 1;
+                        }
+                        
+                        if (this.worldPhysics.isSolid(this.x + this.animalDir * 2, this.y - 2)) {
+                            this.animalDir *= -1; // Turn around if hitting a wall
+                        }
+                        
+                        this.vx = this.animalDir * 2;
+                        this.vy = 0;
+                        
+                        // Small chance to jump
+                        if (Math.random() < 0.01) {
+                            this.vy = -6; 
+                        }
+                    } else if (this.config.reflect) {
                         this.x = hitResult.x;
                         this.y = hitResult.y;
 
@@ -165,12 +193,17 @@ export class Projectile {
                             this.explode(this.x, this.y);
                             return;
                         } else {
-                            this.isPlanted = true;
+                            if (!this.isAnimal) {
+                                this.isPlanted = true;
+                            }
                         }
                     }
                 } else {
                     this.x = targetX;
                     this.y = targetY;
+                    if (this.isAnimal) {
+                         this.vx = this.animalDir * 2; // Keep horizontal momentum while falling
+                    }
                 }
 
                 if (this.isPlanted || !this.isActive) {
@@ -228,7 +261,7 @@ export class Projectile {
         }
     }
 
-    private explode(x: number, y: number) {
+    public explode(x: number, y: number) {
         if (!this.isActive) return;
         
         this.callbacks.onExplode(x, y, this.config.explosionRadius, this.config.damage);
