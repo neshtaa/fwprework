@@ -222,8 +222,10 @@ export class Worm {
     }
     
     public takeDamage(amount: number) {
-        if (amount <= 0) return;
+        if (amount === 0) return;
         this.health -= amount;
+        
+        // Match Flash behavior: no upper bound for overheal, but cap at 0 for death
         if (this.health <= 0) {
             this.health = 0;
             this.sprite.setVisible(false); // Dead
