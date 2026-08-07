@@ -18,8 +18,7 @@ export class Worm {
     public vy: number = 0;
     public isGrounded: boolean = false;
     
-    // Constants matching the game
-    private get gravity(): number { return Projectile.BASE_GRAVITY; }
+    public get gravity(): number { return Projectile.BASE_GRAVITY; }
     private maxFallSpeed: number = 10;
     private moveSpeed: number = 1.5;
     private jumpForceY: number = -3;

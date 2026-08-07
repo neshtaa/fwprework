@@ -408,6 +408,10 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     }
     
     public fireWeapon(vx: number, vy: number, targetX?: number, targetY?: number) {
+        if (this.waitingForTurnEnd || this.isGameOver || this.worms.length === 0) {
+            return;
+        }
+        
         const activeWorm = this.worms[this.activeWormIndex];
         const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
         
@@ -468,22 +472,16 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 this.turnTimeLeft = 0;
                 return;
             } else if (currentWeapon === 'low_gravity') {
-                Projectile.BASE_GRAVITY = 0.12; // Modifies globally for the turn (or forever?)
+                Projectile.BASE_GRAVITY = 0.12; 
                 this.sound.play('throwing', { volume: 0.6 });
-                this.waitingForTurnEnd = true;
-                this.turnTimeLeft = 0;
                 return;
             } else if (currentWeapon === 'fast_walk') {
-                activeWorm.speedMultiplier = 2; // Need to add to Worm.ts
+                activeWorm.speedMultiplier = 2; 
                 this.sound.play('throwing', { volume: 0.6 });
-                this.waitingForTurnEnd = true;
-                this.turnTimeLeft = 0;
                 return;
             } else if (currentWeapon === 'medikit') {
                 activeWorm.takeDamage(-50); // Heals 50
                 this.sound.play('throwing', { volume: 0.6 });
-                this.waitingForTurnEnd = true;
-                this.turnTimeLeft = 0;
                 return;
             } else if (currentWeapon === 'super_medikit') {
                 activeWorm.takeDamage(-100); // Heals 100
@@ -491,8 +489,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 activeWorm.poisonDamage = 0;
                 activeWorm.nextPoisonDamage = 0;
                 this.sound.play('throwing', { volume: 0.6 });
-                this.waitingForTurnEnd = true;
-                this.turnTimeLeft = 0;
                 return;
             } else if (targetX !== undefined && targetY !== undefined && (currentWeapon === 'teleport' || currentWeapon === 'upg_teleport' || currentWeapon === 'upg_teleport2')) {
                 // Teleport execution
