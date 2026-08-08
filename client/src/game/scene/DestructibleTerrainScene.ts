@@ -1082,6 +1082,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         
         // Reset utilities from previous turn
         Projectile.BASE_GRAVITY = 0.24;
+        this.isLaserSightActive = false;
         
         // Apply poison DoT on turn boundary
         for (const w of this.worms) {

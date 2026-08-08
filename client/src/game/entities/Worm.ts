@@ -326,7 +326,13 @@ export class Worm {
         } else {
             this.x = targetX;
             this.y = targetY;
-            this.isGrounded = false;
+            
+            // Check if ground is just below to prevent oscillating between grounded/falling
+            if (this.isGrounded && this.vy === 0 && this.worldPhysics.isSolid(this.x, this.y + 1)) {
+                this.isGrounded = true;
+            } else {
+                this.isGrounded = false;
+            }
             
             if (!this.isJetpacking && !this.isDigging) {
                 if (this.isParachuting) {
