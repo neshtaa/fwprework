@@ -337,8 +337,8 @@ export class Worm {
             if (!this.isJetpacking && !this.isDigging) {
                 if (this.isParachuting) {
                     // Could play a parachute deploy animation here if available
-                } else if (this.sprite.anims.currentAnim?.key !== 'worm_fly') {
-                    this.sprite.play('worm_fly');
+                } else if (this.sprite.anims.currentAnim?.key !== 'worm_idle') {
+                    this.sprite.play('worm_idle');
                 }
             }
         }
