@@ -31,6 +31,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private spaceKey!: Phaser.Input.Keyboard.Key;
 
+    private isLaserSightActive: boolean = false;
+    
     // Game state
     private turnTimeLeft: number = 60;
     private turnTimerEvent!: Phaser.Time.TimerEvent;
@@ -138,6 +140,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         this.waitingForTurnEnd = false;
         this.isGameOver = false;
         this.isAiming = false;
+        this.isLaserSightActive = false;
+        Projectile.BASE_GRAVITY = 0.24;
         this.teamInventories = {};
         this.currentWind = 0;
 
@@ -499,6 +503,23 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 const sndKey = config.sound || currentWeapon;
                 if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
                 return;
+            } else if (currentWeapon === 'jet_pack' || currentWeapon === 'upg_jet_pack' || currentWeapon === 'ag_pack') {
+                activeWorm.startJetpack(currentWeapon);
+                const sndKey = 'jet_pack_start';
+                if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
+                // Do not end turn, allow flying
+                return;
+            } else if (currentWeapon === 'blow_torch' || currentWeapon === 'pneumatic_drill') {
+                activeWorm.startDigging(currentWeapon);
+                return;
+            } else if (currentWeapon === 'laser_sight') {
+                this.isLaserSightActive = true;
+                const sndKey = config.sound || currentWeapon;
+                if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
+                return;
+            } else if (currentWeapon === 'parachute') {
+                activeWorm.startParachute();
+                return;
             } else if (targetX !== undefined && targetY !== undefined && (currentWeapon === 'teleport' || currentWeapon === 'upg_teleport' || currentWeapon === 'upg_teleport2')) {
                 // Teleport execution
                 activeWorm.x = targetX;
@@ -808,7 +829,26 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
             const config = currentWeapon ? WEAPONS[currentWeapon] : null;
 
-            if (this.isAiming) {
+            if (activeWorm.isJetpacking) {
+                activeWorm.jetpackMove(
+                    this.cursors.up.isDown,
+                    this.cursors.down.isDown,
+                    this.cursors.left.isDown,
+                    this.cursors.right.isDown
+                );
+                if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+                    activeWorm.stopJetpack();
+                }
+            } else if (activeWorm.isDigging) {
+                if (activeWorm.digType === 'blow_torch') {
+                    if (this.cursors.up.isDown) activeWorm.setDigDirectionY(-1);
+                    else if (this.cursors.down.isDown) activeWorm.setDigDirectionY(1);
+                    else activeWorm.setDigDirectionY(0);
+                }
+                if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+                    activeWorm.stopDigging();
+                }
+            } else if (this.isAiming) {
                 if (config?.wptype === 'a') {
                     if (this.cursors.left.isDown) this.airStrikeDirection = -1;
                     if (this.cursors.right.isDown) this.airStrikeDirection = 1;
@@ -818,7 +858,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 else if (this.cursors.right.isDown) activeWorm.moveRight();
             }
             
-            if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) activeWorm.jump();
+            if (!activeWorm.isJetpacking && !activeWorm.isDigging && Phaser.Input.Keyboard.JustDown(this.spaceKey)) activeWorm.jump();
         }
     }
 
@@ -884,8 +924,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         this.trajectoryGraphics.beginPath();
         this.trajectoryGraphics.moveTo(simX + offsetX, simY + offsetY);
 
-        // Simulate 30 frames
-        for (let i=0; i<30; i++) {
+        const maxFrames = this.isLaserSightActive ? 200 : 30;
+
+        for (let i=0; i<maxFrames; i++) {
             const step = Projectile.simulateStep(simX, simY, simVx, simVy, this.currentWind, currentWeapon);
             const hitResult = this.worldPhysics.checkHitLine(simX, simY, step.x, step.y);
             
@@ -898,7 +939,13 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             simY = step.y;
             simVx = step.vx;
             simVy = step.vy;
-            this.trajectoryGraphics.lineTo(simX + offsetX, simY + offsetY);
+            
+            if (this.isLaserSightActive) {
+                this.trajectoryGraphics.lineTo(simX + offsetX, simY + offsetY);
+            } else if (i % 3 === 0) {
+                this.trajectoryGraphics.fillStyle(0xff0000, 1 - (i / maxFrames));
+                this.trajectoryGraphics.fillCircle(simX + offsetX, simY + offsetY, 2);
+            }
         }
         this.trajectoryGraphics.strokePath();
     }
@@ -999,7 +1046,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         for (const worm of this.worms) {
             if (worm.health > 0 || worm.sprite.active) {
-                worm.update(delta);
+                worm.update(delta, this.currentWind);
             }
         }
 

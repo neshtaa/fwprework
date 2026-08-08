@@ -34,6 +34,23 @@ export class Worm {
     public poisonDamage: number = 0;
     public nextPoisonDamage: number = 0;
 
+    // Jetpack State
+    public isJetpacking: boolean = false;
+    public jetpackType: string = '';
+    public jetpackFuel: number = 0;
+    public jetpackSoundPlayed: boolean = false;
+
+    // Digging State (Blow Torch, Drill)
+    public isDigging: boolean = false;
+    public digType: string = '';
+    public digTimer: number = 0;
+    public digMaxTime: number = 0;
+    public digDirectionY: number = 0;
+    public digSoundPlayed: boolean = false;
+    
+    // Parachute State
+    public isParachuting: boolean = false;
+
     constructor(scene: Phaser.Scene, x: number, y: number, color: number, team: number, worldPhysics: WorldPhysics, name: string) {
         this.x = x;
         this.y = y;
@@ -84,6 +101,120 @@ export class Worm {
             }
         }
     }
+    
+    // --- Digging Methods ---
+    
+    public startDigging(type: string) {
+        if (this.isDigging) return;
+        this.isDigging = true;
+        this.digType = type;
+        this.digTimer = 0;
+        this.digMaxTime = type === 'pneumatic_drill' ? 240 : 300; // 4-5 seconds
+        this.digDirectionY = 0;
+        this.digSoundPlayed = false;
+        this.vx = 0;
+        this.vy = 0;
+        
+        // Face correct way for blow torch
+        if (type === 'blow_torch') {
+            this.sprite.play('worm_walk');
+        } else {
+            this.sprite.play('worm_idle');
+        }
+    }
+    
+    public stopDigging() {
+        this.isDigging = false;
+        if (this.digSoundPlayed) {
+            this.sprite.scene.sound.stopByKey(this.digType);
+            this.digSoundPlayed = false;
+        }
+        this.sprite.play('worm_idle');
+        
+        // Notify scene to end turn
+        if (this.sprite.scene && (this.sprite.scene as any).waitingForTurnEnd === false) {
+            (this.sprite.scene as any).waitingForTurnEnd = true;
+            (this.sprite.scene as any).turnTimeLeft = 0;
+        }
+    }
+    
+    public setDigDirectionY(dirY: number) {
+        if (this.isDigging && this.digType === 'blow_torch') {
+            this.digDirectionY = dirY;
+        }
+    }
+
+    private updateDigging() {
+        this.digTimer++;
+        if (this.digTimer >= this.digMaxTime) {
+            this.stopDigging();
+            return;
+        }
+        
+        if (!this.digSoundPlayed) {
+            if (this.sprite.scene.cache.audio.exists(this.digType)) {
+                this.sprite.scene.sound.play(this.digType, { loop: true, volume: 0.6 });
+            }
+            this.digSoundPlayed = true;
+        }
+        
+        // Burn terrain
+        if (this.digTimer % 4 === 0) { // Every 4 frames (like Flash)
+            const radius = this.digType === 'blow_torch' ? 15 : 12;
+            let eraseX = this.x;
+            let eraseY = this.y;
+            
+            if (this.digType === 'blow_torch') {
+                eraseX += this.facingRight ? 15 : -15;
+                eraseY += this.digDirectionY * 15;
+                
+                // Move worm slowly
+                this.x += this.facingRight ? 0.5 : -0.5;
+                this.y += this.digDirectionY * 0.5;
+            } else {
+                eraseY += 10;
+                // Move worm down
+                this.y += 0.5;
+                this.vy = 0;
+            }
+            
+            this.worldPhysics.eraseCircle(eraseX, eraseY, radius);
+            
+            // Push nearby enemies (Flash mimic)
+            const scene = this.sprite.scene as any;
+            if (scene.worms) {
+                for (const w of scene.worms) {
+                    if (w !== this && w.health > 0) {
+                        const dist = Phaser.Math.Distance.Between(this.x, this.y, w.x, w.y);
+                        if (dist < radius * 1.5) {
+                            if (this.digType === 'blow_torch') {
+                                w.vx += this.facingRight ? 1 : -1;
+                                w.vy -= 2;
+                                w.takeDamage(1);
+                            } else {
+                                w.vx += this.facingRight ? 0.5 : -0.5;
+                                w.vy -= 1;
+                                w.takeDamage(1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- Parachute Methods ---
+    
+    public startParachute() {
+        if (this.isGrounded || this.isParachuting || this.isJetpacking || this.isDigging) return;
+        this.isParachuting = true;
+    }
+    
+    public stopParachute() {
+        this.isParachuting = false;
+        // Optionally notify scene to end turn here if dropping parachute ends turn? 
+        // In Flash WMD it doesn't end turn immediately if you drop before landing, you just fall.
+    }
 
     private drawHealthBar() {
         this.healthBar.clear();
@@ -108,7 +239,7 @@ export class Worm {
         this.healthBar.fillRect(x, y, width * hpPercent, height);
     }
 
-    public update(_delta: number) {
+    public update(_delta: number, currentWind: number = 0) {
         if (this.health <= 0) {
             if (this.isGrounded && this.sprite && this.sprite.active) {
                 this.sprite.destroy();
@@ -118,14 +249,28 @@ export class Worm {
             if (!this.sprite || !this.sprite.active) return;
         }
 
-        // Apply gravity if not grounded
-        if (!this.isGrounded) {
-            this.vy += this.gravity;
-            if (this.vy > this.maxFallSpeed) this.vy = this.maxFallSpeed;
-            // Removed horizontal air friction to preserve explosion knockback
+        if (this.isJetpacking) {
+            this.updateJetpack();
+        } else if (this.isDigging) {
+            this.updateDigging();
         } else {
-            this.vx *= 0.8;
-            if (Math.abs(this.vx) < 0.1) this.vx = 0;
+            // Apply gravity if not grounded
+            if (!this.isGrounded) {
+                if (this.isParachuting) {
+                    this.vy += this.gravity * 0.1;
+                    if (this.vy > 1.5) this.vy = 1.5; // Max parachute fall speed
+                    this.vx += currentWind * 0.1; // Wind effect
+                    // Some air friction
+                    this.vx *= 0.95;
+                } else {
+                    this.vy += this.gravity;
+                    if (this.vy > this.maxFallSpeed) this.vy = this.maxFallSpeed;
+                }
+            } else {
+                if (this.isParachuting) this.stopParachute();
+                this.vx *= 0.8;
+                if (Math.abs(this.vx) < 0.1) this.vx = 0;
+            }
         }
 
         const targetX = this.x + this.vx;
@@ -147,7 +292,7 @@ export class Worm {
                 }
             }
 
-            if (!this.isGrounded && this.vy > 0) {
+            if (!this.isGrounded && this.vy > 0 && !this.isJetpacking) {
                 // Apply fall damage based on Flash logic (vx + vy) * 0.2
                 const impactSpeed = Math.abs(this.vx) + Math.abs(this.vy);
                 if (impactSpeed > 4) { // small threshold to avoid damage from tiny bumps
@@ -158,20 +303,38 @@ export class Worm {
                 }
             }
             
-            this.vy = 0;
-            this.isGrounded = true;
-            
-            // Pop out of ground slightly to prevent getting stuck
-            while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
-                this.y -= 1;
+            if (this.isJetpacking) {
+                // Flash WMD bounce logic for jetpack
+                this.vx *= 0.1;
+                this.vy *= 0.1;
+                this.isGrounded = false; // Cannot ground while jetpacking
+            } else if (this.isDigging) {
+                // If we hit solid terrain while digging, we erase it
+                this.vx = 0;
+                this.vy = 0;
+                this.isGrounded = true;
+            } else {
+                this.vx = 0;
+                this.vy = 0;
+                this.isGrounded = true;
+                
+                // Pop out of ground slightly to prevent getting stuck
+                while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
+                    this.y -= 1;
+                }
             }
         } else {
-            const groundCheck = this.worldPhysics.checkHitLine(this.x, this.y, this.x, this.y + 2);
-            if (!groundCheck.hit) {
-                this.isGrounded = false;
-            }
             this.x = targetX;
             this.y = targetY;
+            this.isGrounded = false;
+            
+            if (!this.isJetpacking && !this.isDigging) {
+                if (this.isParachuting) {
+                    // Could play a parachute deploy animation here if available
+                } else if (this.sprite.anims.currentAnim?.key !== 'worm_fly') {
+                    this.sprite.play('worm_fly');
+                }
+            }
         }
 
         // Keep inside bounds roughly
@@ -190,8 +353,6 @@ export class Worm {
             this.nameText.setPosition(this.x, this.y - 30);
             this.drawHealthBar();
         }
-        
-        // Friction is handled early in the update loop now
     }
 
     public setFacing(facingRight: boolean) {
@@ -201,21 +362,29 @@ export class Worm {
     }
 
     public moveLeft() {
-        if (!this.isGrounded) return;
-        this.vx = -this.moveSpeed * this.speedMultiplier;
-        this.setFacing(false);
+        if (!this.isGrounded && !this.isParachuting) return;
+        if (this.isParachuting) {
+            this.vx -= 0.05;
+        } else {
+            this.vx = -this.moveSpeed * this.speedMultiplier;
+            this.setFacing(false);
+        }
     }
 
     public moveRight() {
-        if (!this.isGrounded) return;
-        this.vx = this.moveSpeed * this.speedMultiplier;
-        this.setFacing(true);
+        if (!this.isGrounded && !this.isParachuting) return;
+        if (this.isParachuting) {
+            this.vx += 0.05;
+        } else {
+            this.vx = this.moveSpeed * this.speedMultiplier;
+            this.setFacing(true);
+        }
     }
 
     public jump() {
         if (this.isGrounded) {
             this.vy = this.jumpForceY;
-            this.vx = this.facingRight ? this.jumpForceX : -this.jumpForceX;
+            this.vx = (this.facingRight ? 1 : -1) * this.jumpForceX;
             this.isGrounded = false;
         }
     }
@@ -228,6 +397,69 @@ export class Worm {
         if (this.health <= 0) {
             this.health = 0;
             this.sprite.setVisible(false); // Dead
+        }
+    }
+    
+    // --- Jetpack Methods ---
+    
+    public startJetpack(type: string) {
+        if (this.isJetpacking) return;
+        this.isJetpacking = true;
+        this.jetpackType = type;
+        this.jetpackFuel = type === 'upg_jet_pack' ? 60 : (type === 'ag_pack' ? 40 : 30);
+        this.isGrounded = false;
+        this.jetpackSoundPlayed = false;
+        // In Flash, there is a delay/startup animation. We'll simplify.
+    }
+    
+    public stopJetpack() {
+        this.isJetpacking = false;
+        if (this.jetpackSoundPlayed) {
+            this.sprite.scene.sound.stopByKey('jet_pack');
+            this.jetpackSoundPlayed = false;
+        }
+    }
+
+    private updateJetpack() {
+        if (this.jetpackFuel <= 0) {
+            this.stopJetpack();
+            return;
+        }
+        
+        // If not ag_pack, apply gravity
+        if (this.jetpackType !== 'ag_pack') {
+            this.vy += this.gravity;
+        }
+        
+        // Speed cap
+        const maxSpeed = 8;
+        if (Math.abs(this.vx) > maxSpeed) this.vx = Math.sign(this.vx) * maxSpeed;
+        if (Math.abs(this.vy) > maxSpeed) this.vy = Math.sign(this.vy) * maxSpeed;
+    }
+    
+    public jetpackMove(up: boolean, down: boolean, left: boolean, right: boolean) {
+        if (!this.isJetpacking || this.jetpackFuel <= 0) return;
+        
+        if (left) this.vx -= 0.07 * 2; // Increased slightly for TS delta frame scaling
+        if (right) this.vx += 0.07 * 2;
+        
+        if (up) this.vy += this.vy > 0 ? -1 : -0.3;
+        if (down) this.vy += 0.3;
+        
+        if (up || down || left || right) {
+            this.jetpackFuel -= 0.12 * 2;
+        }
+        
+        if (up || down || left || right || this.jetpackType === 'ag_pack') {
+            if (!this.jetpackSoundPlayed) {
+                if (this.sprite.scene.cache.audio.exists('jet_pack')) {
+                    this.sprite.scene.sound.play('jet_pack', { loop: true, volume: 0.5 });
+                }
+                this.jetpackSoundPlayed = true;
+            }
+        } else if (this.jetpackSoundPlayed) {
+            this.sprite.scene.sound.stopByKey('jet_pack');
+            this.jetpackSoundPlayed = false;
         }
     }
 }
