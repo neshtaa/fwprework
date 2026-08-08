@@ -278,6 +278,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.turnEndTimerEvent.destroy();
             this.turnEndTimerEvent = undefined;
         }
+        
+        // Stop any looping audio from worms
+        if (this.worms) {
+            for (const w of this.worms) {
+                if (w.isJetpacking) w.stopJetpack();
+                if (w.isDigging) w.stopDigging();
+            }
+        }
     }
 
     private setupUIBindings() {
