@@ -169,8 +169,8 @@ export class Projectile {
                             this.vy *= -1;
                         }
 
-                        this.vx = Math.abs(this.vx) < 0.1 ? 0 : this.vx * this.config.bounceX;
-                        this.vy = Math.abs(this.vy) < 0.1 ? 0 : this.vy * this.config.bounceY;
+                        this.vx = Math.abs(this.vx) < 1.5 ? 0 : this.vx * this.config.bounceX;
+                        this.vy = Math.abs(this.vy) < 1.5 ? 0 : this.vy * this.config.bounceY;
 
                         // Ensure it's not stuck inside terrain
                         while (this.worldPhysics.isSolid(this.x, this.y) && this.y > 0) {
@@ -274,17 +274,13 @@ export class Projectile {
             // Do not destroy, keep it active to explode again next tick!
         } else {
             // Apply special effects on the FINAL explosion
-            if (this.config.fireOnExplode || this.config.poisonOnExplode || this.config.poisonOnExplodeRad || this.config.breaking) {
+            if (this.config.fireOnExplode || this.config.poisonOnExplode || this.config.breaking) {
                 if (this.config.fireOnExplode) {
-                    this.callbacks.onSpawnFire(x, y, this.config.fireAmount || 0, false); // napalm_fire not supported directly yet
+                    this.callbacks.onSpawnFire(x, y, this.config.fireAmount || 0, false);
                 }
                 
                 if (this.config.poisonOnExplode) {
                     this.callbacks.onSpawnPoison(x, y, this.config.poisonAmount || 0, false);
-                }
-
-                if (this.config.poisonOnExplodeRad) {
-                    this.callbacks.onSpawnPoison(x, y, this.config.poisonAmount || 0, true);
                 }
 
                 if (this.config.breaking && this.config.breakingAmount) {
