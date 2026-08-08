@@ -128,6 +128,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     }
 
     create() {
+        this.sound.stopAll();
+        this.sound.play('_music', { loop: true, volume: 0.3 });
         // Reset state for restart
         this.worms = [];
         this.projectiles = [];
@@ -374,7 +376,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             
             const config = WEAPONS[currentWeapon];
             if (config.wptype === 'a') {
-                this.sound.play('throwing', { volume: 0.6 });
+                const sndKey = config.sound || currentWeapon;
+                if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
                 this.fireWeapon(0, 0, worldCoords.x, worldCoords.y);
                 return;
             }
@@ -401,7 +404,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const vx = (dx / dist) * speed;
         const vy = (dy / dist) * speed;
 
-        this.sound.play('throwing', { volume: 0.6 });
+        const config = WEAPONS[currentWeapon];
+        const sndKey = config.sound || currentWeapon;
+        if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
         
         activeWorm.setFacing(vx > 0);
         this.fireWeapon(vx, vy);
@@ -473,22 +478,26 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 return;
             } else if (currentWeapon === 'low_gravity') {
                 Projectile.BASE_GRAVITY = 0.12; 
-                this.sound.play('throwing', { volume: 0.6 });
+                const sndKey = config.sound || currentWeapon;
+                if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
                 return;
             } else if (currentWeapon === 'fast_walk') {
                 activeWorm.speedMultiplier = 2; 
-                this.sound.play('throwing', { volume: 0.6 });
+                const sndKey = config.sound || currentWeapon;
+                if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
                 return;
             } else if (currentWeapon === 'medikit') {
                 activeWorm.takeDamage(-50); // Heals 50
-                this.sound.play('throwing', { volume: 0.6 });
+                const sndKey = config.sound || currentWeapon;
+                if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
                 return;
             } else if (currentWeapon === 'super_medikit') {
                 activeWorm.takeDamage(-100); // Heals 100
                 activeWorm.isPoisoned = false;
                 activeWorm.poisonDamage = 0;
                 activeWorm.nextPoisonDamage = 0;
-                this.sound.play('throwing', { volume: 0.6 });
+                const sndKey = config.sound || currentWeapon;
+                if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
                 return;
             } else if (targetX !== undefined && targetY !== undefined && (currentWeapon === 'teleport' || currentWeapon === 'upg_teleport' || currentWeapon === 'upg_teleport2')) {
                 // Teleport execution
@@ -579,9 +588,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             }
 
             if (hitSomething) {
-                this.sound.play('baseball_hit', { volume: 0.6 }); 
+                this.sound.play('baseball_bat', { volume: 0.6 });
             } else if (currentWeapon === 'baseball_bat' || currentWeapon === 'power_bat') {
-                this.sound.play('baseball_miss', { volume: 0.6 });
+                this.sound.play('baseball_bat', { volume: 0.6 });
             }
             
             this.waitingForTurnEnd = true;
@@ -965,7 +974,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
                 const proj = this.spawnProjectile(this.activeBurst.x, this.activeBurst.y, fireVx, fireVy, this.activeBurst.weaponType);
                 this.cameras.main.startFollow(proj.sprite);
-                this.sound.play('throwing', { volume: 0.3 });
+                const config = WEAPONS[this.activeBurst.weaponType];
+                const sndKey = config && config.sound ? config.sound : this.activeBurst.weaponType;
+                if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.3 });
             }
             
             if (this.activeBurst.bulletsLeft <= 0) {
@@ -1098,6 +1109,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                     
                     // Switch facing direction based on angle
                     activeWorm.setFacing(Math.cos(angle) > 0);
+                    const config = WEAPONS[weapon];
+                    const sndKey = config && config.sound ? config.sound : weapon;
+                    if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
                     
                     this.fireWeapon(vx, vy);
                 });

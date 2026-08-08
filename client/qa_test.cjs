@@ -33,7 +33,9 @@ const fs = require('fs');
     async function getGameState() {
         return await page.evaluate(() => {
             const game = window.__GAME__;
-            const scene = game.scene.getScenes(true)[0];
+            const activeScenes = game.scene.getScenes(true);
+            if (!activeScenes || activeScenes.length === 0) return null;
+            const scene = activeScenes[0];
             return {
                 mapName: game.registry.get('currentMapName'),
                 wormsCount: scene.worms ? scene.worms.length : 0,
