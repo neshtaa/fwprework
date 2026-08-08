@@ -466,8 +466,11 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 const py = startY;
                 const projType = currentWeapon === 'mine_strike' ? 'mine' : currentWeapon;
                 const proj = this.spawnProjectile(px, py, vxBase, vyBase, projType);
-                if (i === halfAmount) {
-                     this.cameras.main.startFollow(proj.sprite);
+                if (proj) {
+                    this.projectiles.push(proj);
+                    if (i === halfAmount) {
+                        this.cameras.main.startFollow(proj.sprite);
+                    }
                 }
             }
             this.waitingForTurnEnd = true;
@@ -650,13 +653,21 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             }
         } else {
             const proj = this.spawnProjectile(activeWorm.x, activeWorm.y, vx, vy, currentWeapon);
-            this.cameras.main.startFollow(proj.sprite);
+            if (proj) {
+                this.projectiles.push(proj);
+                this.cameras.main.startFollow(proj.sprite);
+            }
             this.waitingForTurnEnd = true;
             this.turnTimeLeft = 0; 
         }
     }
 
-    private spawnProjectile(x: number, y: number, vx: number, vy: number, weaponType: string): Projectile {
+    private spawnProjectile(x: number, y: number, vx: number, vy: number, weaponType: string): Projectile | null {
+        if (!WEAPONS[weaponType as any]) {
+            console.warn(`[DestructibleTerrainScene] Cannot spawn projectile: missing config for '${weaponType}'.`);
+            return null;
+        }
+        
         const proj = new Projectile(this, x, y, vx, vy, weaponType, this.worldPhysics, this.currentWind, {
             getWorms: () => this.worms,
             onExplode: (expX, expY, radius, damage) => {
@@ -1020,7 +1031,10 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 }
 
                 const proj = this.spawnProjectile(this.activeBurst.x, this.activeBurst.y, fireVx, fireVy, this.activeBurst.weaponType);
-                this.cameras.main.startFollow(proj.sprite);
+                if (proj) {
+                    this.projectiles.push(proj);
+                    this.cameras.main.startFollow(proj.sprite);
+                }
                 const config = WEAPONS[this.activeBurst.weaponType];
                 const sndKey = config && config.sound ? config.sound : this.activeBurst.weaponType;
                 if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.3 });
