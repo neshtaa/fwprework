@@ -35,12 +35,30 @@ export interface WeaponConfig {
     multiplexplosions: number;
     vrotating: boolean;
     exhaust: boolean;
+    sound?: string;
 }
 
 export type WeaponType = string;
 
 export const WEAPONS: Record<WeaponType, WeaponConfig> = {
 `;
+
+// Extract existing sound mappings
+const soundMap = {};
+if (fs.existsSync('src/game/data/weapons.ts')) {
+    const lines = fs.readFileSync('src/game/data/weapons.ts', 'utf8').split('\n');
+    let currentWeapon = null;
+    for (const line of lines) {
+        const wMatch = line.match(/^\s*"([^"]+)":\s*\{/);
+        if (wMatch) {
+            currentWeapon = wMatch[1];
+        }
+        const sMatch = line.match(/^\s*sound:\s*"([^"]+)"/);
+        if (sMatch && currentWeapon) {
+            soundMap[currentWeapon] = sMatch[1];
+        }
+    }
+}
 
 for (const key in weapons) {
     const w = weapons[key];
@@ -98,7 +116,7 @@ for (const key in weapons) {
         breakingAmount: ${w.BREAKINGAMOUNT || 0},
         multiplexplosions: ${w.MULTIPLEXPLOSIONS || 0},
         vrotating: ${w.VROTATING || false},
-        exhaust: ${w.EXHAUST || false}
+        exhaust: ${w.EXHAUST || false}${soundMap[key] ? `,\n        sound: "${soundMap[key]}"` : ''}
     },
 `;
 }

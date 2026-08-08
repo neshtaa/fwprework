@@ -24,7 +24,6 @@ export interface WeaponConfig {
     fireOnExplode: boolean;
     fireAmount: number;
     poisonOnExplode: boolean;
-    poisonOnExplodeRad?: boolean;
     poisonAmount: number;
     breaking: boolean;
     breakingType: string;
@@ -55,7 +54,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "",
         wptype: "p",
         delay: 0,
         gold: 1000,
@@ -122,7 +120,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "fire",
         wptype: "p",
         delay: 0,
         gold: 12000,
@@ -137,7 +134,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: true
+        exhaust: true,
+        sound: "fire"
     },
     "poison_bazooka": {
         id: 4,
@@ -156,7 +154,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "throwing",
         wptype: "p",
         delay: 0,
         gold: 15000,
@@ -171,7 +168,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: true
+        exhaust: true,
+        sound: "throwing"
     },
     "ap_bazooka": {
         id: 5,
@@ -256,7 +254,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "grenade",
         wptype: "p",
         delay: 0,
         gold: 1000,
@@ -271,7 +268,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "grenade"
     },
     "unfail_grenade": {
         id: 7,
@@ -290,7 +288,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "grenade",
         wptype: "p",
         delay: 0,
         gold: 4000,
@@ -305,7 +302,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "grenade"
     },
     "plasma_grenade": {
         id: 8,
@@ -324,7 +322,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "grenade",
         wptype: "p",
         delay: 0,
         gold: 24000,
@@ -339,7 +336,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "grenade"
     },
     "pulse_grenade": {
         id: 9,
@@ -358,7 +356,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "grenade",
         wptype: "p",
         delay: 0,
         gold: 29000,
@@ -373,7 +370,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "grenade"
     },
     "holy_hand_grenade": {
         id: 10,
@@ -392,7 +390,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "holy_hand_grenade",
         wptype: "p",
         delay: 0,
         gold: 40000,
@@ -407,7 +404,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "holy_hand_grenade"
     },
     "cluster_bomb": {
         id: 11,
@@ -426,7 +424,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "fire",
         wptype: "p",
         delay: 0,
         gold: 1500,
@@ -441,7 +438,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 5,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "fire"
     },
     "unfail_cluster_bomb": {
         id: 12,
@@ -460,7 +458,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "throwing",
         wptype: "p",
         delay: 0,
         gold: 5500,
@@ -475,7 +472,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 5,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "throwing"
     },
     "molotov": {
         id: 13,
@@ -626,7 +624,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 3,
-        sound: "banana",
         wptype: "p",
         delay: 0,
         gold: 35000,
@@ -641,7 +638,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 3,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "banana"
     },
     "unfail_banana_bomb": {
         id: 17,
@@ -660,7 +658,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 3,
-        sound: "banana",
         wptype: "p",
         delay: 0,
         gold: 42000,
@@ -675,7 +672,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 3,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "banana"
     },
     "super_banana_bomb": {
         id: 18,
@@ -694,7 +692,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 5,
-        sound: "banana",
         wptype: "p",
         delay: 0,
         gold: 84000,
@@ -709,7 +706,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 5,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "banana"
     },
     "nuclear_bomb": {
         id: 19,
@@ -794,7 +792,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 5,
-        sound: "grenade",
         wptype: "p",
         delay: 0,
         gold: 89000,
@@ -809,7 +806,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 4,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "grenade"
     },
     "rj46": {
         id: 55,
@@ -894,7 +892,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 3,
-        sound: "banana",
         wptype: "p",
         delay: 0,
         gold: 160000,
@@ -909,7 +906,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 4,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "banana"
     },
     "pistol": {
         id: 21,
@@ -928,7 +926,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "pistol",
         wptype: "f",
         delay: 0,
         gold: 300,
@@ -943,7 +940,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "pistol"
     },
     "uzi": {
         id: 22,
@@ -1061,7 +1059,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "sniper",
         wptype: "f",
         delay: 0,
         gold: 16000,
@@ -1076,7 +1073,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "sniper"
     },
     "peacemaker": {
         id: 101,
@@ -1293,7 +1291,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "sniper",
         wptype: "f",
         delay: 0,
         gold: 83000,
@@ -1308,7 +1305,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "sniper"
     },
     "avenger": {
         id: 100,
@@ -1360,7 +1358,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "air_strike",
         wptype: "a",
         delay: 2,
         gold: 5200,
@@ -1375,7 +1372,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: true
+        exhaust: true,
+        sound: "air_strike"
     },
     "napalm_strike": {
         id: 32,
@@ -1427,7 +1425,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 6,
-        sound: "mine",
         wptype: "a",
         delay: 3,
         gold: 16000,
@@ -1442,7 +1439,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "mine"
     },
     "banana_strike": {
         id: 34,
@@ -1527,7 +1525,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "mine",
         wptype: "e",
         delay: 0,
         gold: 800,
@@ -1542,7 +1539,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "mine"
     },
     "unfail_mine": {
         id: 37,
@@ -1561,7 +1559,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "mine",
         wptype: "e",
         delay: 0,
         gold: 2500,
@@ -1576,7 +1573,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "mine"
     },
     "fire_mine": {
         id: 38,
@@ -1595,7 +1593,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "mine",
         wptype: "e",
         delay: 0,
         gold: 12000,
@@ -1610,7 +1607,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "mine"
     },
     "plasma_mine": {
         id: 39,
@@ -1629,7 +1627,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "mine",
         wptype: "e",
         delay: 0,
         gold: 19000,
@@ -1644,7 +1641,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "mine"
     },
     "pulse_mine": {
         id: 40,
@@ -1663,7 +1661,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "mine",
         wptype: "e",
         delay: 0,
         gold: 27000,
@@ -1678,7 +1675,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "mine"
     },
     "nuclear_mine": {
         id: 104,
@@ -1697,7 +1695,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 10,
-        sound: "mine",
         wptype: "e",
         delay: 0,
         gold: 41000,
@@ -1712,7 +1709,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "mine"
     },
     "dynamite": {
         id: 41,
@@ -1731,7 +1729,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.4,
         reflect: true,
         limit: 6,
-        sound: "grenade",
         wptype: "e",
         delay: 0,
         gold: 3000,
@@ -1746,7 +1743,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "grenade"
     },
     "unfail_dynamite": {
         id: 42,
@@ -1765,7 +1763,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.4,
         reflect: true,
         limit: 6,
-        sound: "grenade",
         wptype: "e",
         delay: 0,
         gold: 5000,
@@ -1780,7 +1777,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "grenade"
     },
     "dynamite_bunch": {
         id: 45,
@@ -2228,7 +2226,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "baseball_bat",
         wptype: "c",
         delay: 0,
         gold: 4800,
@@ -2243,7 +2240,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "baseball_bat"
     },
     "shocker": {
         id: 57,
@@ -2559,7 +2557,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "blow_torch",
         wptype: "u",
         delay: 0,
         gold: 1800,
@@ -2574,7 +2571,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "blow_torch"
     },
     "pneumatic_drill": {
         id: 67,
@@ -2593,7 +2591,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "drill",
         wptype: "u",
         delay: 0,
         gold: 1500,
@@ -2608,7 +2605,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "drill"
     },
     "parachute": {
         id: 68,
@@ -2660,7 +2658,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "girder",
         wptype: "u",
         delay: 0,
         gold: 4235,
@@ -2675,7 +2672,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "girder"
     },
     "girder_pack": {
         id: 70,
@@ -2760,7 +2758,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 6,
-        sound: "teleport",
         wptype: "u",
         delay: 0,
         gold: 6000,
@@ -2775,7 +2772,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "teleport"
     },
     "upg_teleport": {
         id: 73,
@@ -3289,7 +3287,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "pulse_pistol",
         wptype: "h",
         delay: 0,
         gold: 164000,
@@ -3304,7 +3301,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "pulse_pistol"
     },
     "plasma_pistol": {
         id: 86,
@@ -3455,7 +3453,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "luiston",
         wptype: "h",
         delay: 0,
         gold: 190000,
@@ -3470,7 +3467,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "luiston"
     },
     "gauss_pistol": {
         id: 91,
@@ -3489,7 +3487,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "gauss_pistol",
         wptype: "h",
         delay: 0,
         gold: 28000,
@@ -3504,7 +3501,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "gauss_pistol"
     },
     "gauss_rifle": {
         id: 92,
@@ -3523,7 +3521,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "gauss_rifle",
         wptype: "h",
         delay: 0,
         gold: 43000,
@@ -3538,7 +3535,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "gauss_rifle"
     },
     "unfail_gauss_rifle": {
         id: 93,
@@ -3557,7 +3555,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "gauss_rifle",
         wptype: "h",
         delay: 0,
         gold: 56000,
@@ -3572,7 +3569,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "gauss_rifle"
     },
     "gauss_minigun": {
         id: 94,
@@ -3624,7 +3622,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "de_lameter",
         wptype: "h",
         delay: 0,
         gold: 340000,
@@ -3639,7 +3636,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 3,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "de_lameter"
     },
     "turbo_rifle": {
         id: 107,
@@ -3691,7 +3689,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 3,
-        sound: "orbit",
         wptype: "a",
         delay: 0,
         gold: 330000,
@@ -3706,7 +3703,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "orbit"
     },
     "ultra_rifle": {
         id: 97,
@@ -3725,7 +3723,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "ultra_rifle",
         wptype: "h",
         delay: 0,
         gold: 260000,
@@ -3740,7 +3737,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "ultra_rifle"
     },
     "vindicator": {
         id: 108,
@@ -3759,7 +3757,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "ec",
         wptype: "h",
         delay: 0,
         gold: 510000,
@@ -3774,7 +3771,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "ec"
     },
     "laser_pistol2": {
         id: 113,
@@ -3859,7 +3857,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: true,
         limit: 6,
-        sound: "holy_hand_grenade",
         wptype: "p",
         delay: 0,
         gold: 54000,
@@ -3874,7 +3871,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "holy_hand_grenade"
     },
     "gauss_pistol2": {
         id: 116,
@@ -3893,7 +3891,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "gauss_pistol2",
         wptype: "h",
         delay: 0,
         gold: 47000,
@@ -3908,7 +3905,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: false,
-        exhaust: false
+        exhaust: false,
+        sound: "gauss_pistol2"
     },
     "hearts_ace": {
         id: 117,
@@ -4026,7 +4024,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "fire",
         wptype: "p",
         delay: 0,
         gold: 400000,
@@ -4041,7 +4038,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: true
+        exhaust: true,
+        sound: "fire"
     },
     "kenton_grenade": {
         id: 121,
@@ -4885,7 +4883,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "laser_at_rifle",
         wptype: "h",
         delay: 0,
         gold: 0,
@@ -4900,7 +4897,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "laser_at_rifle"
     },
     "plasma_at_rifle": {
         id: 203,
@@ -4919,7 +4917,6 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         bounceY: 0.2,
         reflect: false,
         limit: 10,
-        sound: "plasma_at_rifle",
         wptype: "h",
         delay: 0,
         gold: 0,
@@ -4934,7 +4931,8 @@ export const WEAPONS: Record<WeaponType, WeaponConfig> = {
         breakingAmount: 0,
         multiplexplosions: 0,
         vrotating: true,
-        exhaust: false
+        exhaust: false,
+        sound: "plasma_at_rifle"
     },
     "multip14": {
         id: 204,
