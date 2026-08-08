@@ -45,6 +45,7 @@ export class Worm {
     public digType: string = '';
     public digTimer: number = 0;
     public digMaxTime: number = 0;
+    private digAccumulator: number = 0;
     public digDirectionY: number = 0;
     public digSoundPlayed: boolean = false;
     
@@ -109,7 +110,8 @@ export class Worm {
         this.isDigging = true;
         this.digType = type;
         this.digTimer = 0;
-        this.digMaxTime = type === 'pneumatic_drill' ? 240 : 300; // 4-5 seconds
+        this.digMaxTime = type === 'pneumatic_drill' ? 4000 : 5000; // 4-5 seconds
+        this.digAccumulator = 0;
         this.digDirectionY = 0;
         this.digSoundPlayed = false;
         this.vx = 0;
@@ -144,12 +146,14 @@ export class Worm {
         }
     }
 
-    private updateDigging() {
-        this.digTimer++;
+    private updateDigging(delta: number) {
+        this.digTimer += delta;
         if (this.digTimer >= this.digMaxTime) {
             this.stopDigging();
             return;
         }
+        
+        this.digAccumulator += delta;
         
         if (!this.digSoundPlayed) {
             if (this.sprite.scene.cache.audio.exists(this.digType)) {
@@ -158,8 +162,9 @@ export class Worm {
             this.digSoundPlayed = true;
         }
         
-        // Burn terrain
-        if (this.digTimer % 4 === 0) { // Every 4 frames (like Flash)
+        // Burn terrain (roughly every 66ms, equivalent to 4 frames at 60fps)
+        while (this.digAccumulator >= 66) {
+            this.digAccumulator -= 66;
             const radius = this.digType === 'blow_torch' ? 15 : 12;
             let eraseX = this.x;
             let eraseY = this.y;
@@ -252,7 +257,7 @@ export class Worm {
         if (this.isJetpacking) {
             this.updateJetpack();
         } else if (this.isDigging) {
-            this.updateDigging();
+            this.updateDigging(delta);
         } else {
             // Apply gravity if not grounded
             if (!this.isGrounded) {
