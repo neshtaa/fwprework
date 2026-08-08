@@ -475,7 +475,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 const projType = currentWeapon === 'mine_strike' ? 'mine' : currentWeapon;
                 const proj = this.spawnProjectile(px, py, vxBase, vyBase, projType);
                 if (proj) {
-                    this.projectiles.push(proj);
                     if (i === halfAmount) {
                         this.cameras.main.startFollow(proj.sprite);
                     }
@@ -662,7 +661,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         } else {
             const proj = this.spawnProjectile(activeWorm.x, activeWorm.y, vx, vy, currentWeapon);
             if (proj) {
-                this.projectiles.push(proj);
                 this.cameras.main.startFollow(proj.sprite);
             }
             this.waitingForTurnEnd = true;
@@ -1040,7 +1038,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
                 const proj = this.spawnProjectile(this.activeBurst.x, this.activeBurst.y, fireVx, fireVy, this.activeBurst.weaponType);
                 if (proj) {
-                    this.projectiles.push(proj);
                     this.cameras.main.startFollow(proj.sprite);
                 }
                 const config = WEAPONS[this.activeBurst.weaponType];
