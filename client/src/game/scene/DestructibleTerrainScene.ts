@@ -151,18 +151,10 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         this.setupUIBindings();
         getRequiredElement('game-over-screen').style.display = 'none';
-
-        const weaponSelect = getRequiredElement('weaponSelect') as HTMLSelectElement;
-        weaponSelect.innerHTML = '';
-        for (const [key, config] of Object.entries(WEAPONS)) {
-            if (config.shown) {
-                const option = document.createElement('option');
-                option.value = key;
-                option.text = config.name || key;
-                weaponSelect.appendChild(option);
-            }
+        // Initialize currentWeapon
+        if (!this.registry.has('currentWeapon')) {
+            this.registry.set('currentWeapon', 'bazooka');
         }
-        weaponSelect.value = 'bazooka';
 
         const mapKey = 'map';
         const sourceImage = this.textures.get(mapKey).getSourceImage();
@@ -297,11 +289,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     }
 
     private setupUIBindings() {
-        const weaponSelect = getRequiredElement('weaponSelect') as HTMLSelectElement;
-        weaponSelect.onchange = (e) => {
-            const val = (e.target as HTMLSelectElement).value;
-            this.registry.set('currentWeapon', val);
-        };
         
         if (!this.anims.exists('worm_idle')) {
             this.anims.create({
@@ -321,41 +308,20 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             });
         }
 
-        // Initial setup
-        this.registry.set('currentWeapon', weaponSelect.value);
         getRequiredElement('btn-restart').onclick = () => this.scene.restart();
     }
     
     private updateWeaponUI() {
-        const weaponSelect = getRequiredElement('weaponSelect') as HTMLSelectElement;
-        const currentVal = weaponSelect.value;
-        weaponSelect.innerHTML = '';
-        
         const activeTeam = this.worms[this.activeWormIndex]?.team || 1;
         const inventory = this.teamInventories[activeTeam];
+        let currentVal = this.registry.get('currentWeapon') as string;
         
-        weaponSelect.disabled = activeTeam !== 1;
-        
-        for (const [key, config] of Object.entries(WEAPONS)) {
-            if (config.shown) {
-                const count = inventory[key];
-                if (count === 0) continue; // Out of ammo
-                
-                const option = document.createElement('option');
-                option.value = key;
-                const countText = count === -1 ? '∞' : count;
-                option.text = `${config.name || key} (${countText})`;
-                weaponSelect.appendChild(option);
+        // If current weapon is out of ammo, fallback to the first available weapon
+        if (inventory[currentVal] === 0) {
+            const firstAvailable = Object.keys(WEAPONS).find(key => inventory[key] !== 0 && WEAPONS[key as WeaponType].shown);
+            if (firstAvailable) {
+                this.registry.set('currentWeapon', firstAvailable);
             }
-        }
-        
-        // Restore selection if still available, else pick first
-        if (inventory[currentVal] !== 0 && weaponSelect.querySelector(`option[value="${currentVal}"]`)) {
-            weaponSelect.value = currentVal;
-            this.registry.set('currentWeapon', currentVal);
-        } else if (weaponSelect.options.length > 0) {
-            weaponSelect.value = weaponSelect.options[0].value;
-            this.registry.set('currentWeapon', weaponSelect.value);
         }
     }
 
