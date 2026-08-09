@@ -66,9 +66,8 @@ export class WeaponSheetScene extends Phaser.Scene {
             box.setStrokeStyle(2, isCurrent ? 0xffff00 : (hasAmmo ? 0x555555 : 0x330000));
 
             // Weapon sprite
-            let texKey = 'bazooka_0';
-            if (this.textures.exists(key + '_0')) texKey = key + '_0';
-            else if (this.textures.exists(key)) texKey = key;
+            let texKey = `icon_${key}`;
+            if (!this.textures.exists(texKey)) texKey = 'bazooka_0';
             
             const sprite = this.add.sprite(cx, cy, texKey);
             sprite.setScale(0.8);

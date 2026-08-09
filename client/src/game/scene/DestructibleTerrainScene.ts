@@ -8,6 +8,7 @@ import { GUNS_CONFIG } from '../data/GunsConfig';
 import { AIBot } from '../entities/AIBot';
 import { FireParticle } from '../entities/FireParticle';
 import { PoisonParticle } from '../entities/PoisonParticle';
+import { preloadWeapons } from '../data/weapon_preloads';
 
 function getRequiredElement(id: string): HTMLElement {
     const el = document.getElementById(id);
@@ -82,6 +83,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const currentMapPath = this.registry.get('currentMap') || '/1_dmap.png';
         const mapKey = 'map_' + this.registry.get('currentMapName');
         this.load.image(mapKey, currentMapPath);
+        
+        preloadWeapons(this);
         
         for (let i = 0; i < 60; i++) this.load.image(`worm_idle_${i}`, `/sprites/worm_idle/${i + 1}.png`);
         for (let i = 0; i < 9; i++) this.load.image(`worm_walk_${i}`, `/sprites/worm_walk/${i + 1}.png`);
