@@ -15,14 +15,21 @@ export class WorldPhysics {
         this.updateCache();
     }
 
-    private updateCache() {
+    public updateCache() {
         this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
     }
 
     public addSolidPixel(x: number, y: number) {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
         const index = (y * this.width + x) * 4 + 3;
+        
+        // We only update the alpha channel here for physics.
+        // The actual visual is drawn in placeGirder, or we can sync it later.
         this.imageData.data[index] = 255;
+    }
+
+    public syncPixels() {
+        this.ctx.putImageData(this.imageData, 0, 0);
     }
 
     public isSolid(x: number, y: number): boolean {

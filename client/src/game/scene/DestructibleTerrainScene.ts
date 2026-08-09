@@ -843,24 +843,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         ctx.restore();
         this.canvasTexture.refresh();
 
-        // Update WorldPhysics
-        const boundsRadius = Math.ceil(Math.sqrt(gW*gW + gH*gH) / 2);
-        const startX = Math.max(0, Math.floor(x - boundsRadius));
-        const endX = Math.min(this.worldPhysics.width - 1, Math.ceil(x + boundsRadius));
-        const startY = Math.max(0, Math.floor(y - boundsRadius));
-        const endY = Math.min(this.worldPhysics.height - 1, Math.ceil(y + boundsRadius));
-        
-        for (let py = startY; py <= endY; py++) {
-            for (let px = startX; px <= endX; px++) {
-                const tx = px - x;
-                const ty = py - y;
-                const rx = tx * cosA - ty * sinA;
-                const ry = tx * sinA + ty * cosA;
-                if (rx >= -gW/2 - 1 && rx <= gW/2 + 1 && ry >= -gH/2 - 1 && ry <= gH/2 + 1) {
-                    this.worldPhysics.addSolidPixel(px, py);
-                }
-            }
-        }
+        // Update WorldPhysics cache directly from the canvas we just drew to
+        this.worldPhysics.updateCache();
         
         const sndKey = WEAPONS['girder']?.sound || 'girder';
         if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
