@@ -64,27 +64,6 @@ const FALLBACK_MAP = {
     'power_axe': 'baseball_bat',
     'power_bat': 'baseball_bat',
     'ec_panhammer': 'baseball_bat',
-    'medikit': 'choose_worm',
-    'super_medikit': 'choose_worm',
-    'skip_go': 'choose_worm',
-    'laser_sight': 'choose_worm',
-    'low_gravity': 'choose_worm',
-    'fast_walk': 'choose_worm',
-    'ultra_scaner': 'choose_worm',
-    'blow_torch': 'choose_worm',
-    'pneumatic_drill': 'choose_worm',
-    'parachute': 'choose_worm',
-    'girder': 'choose_worm',
-    'girder_pack': 'choose_worm',
-    'jet_pack': 'choose_worm',
-    'teleport': 'choose_worm',
-    'upg_teleport': 'choose_worm',
-    'upg_jet_pack': 'choose_worm',
-    'ag_pack': 'choose_worm',
-    'add_time': 'choose_worm',
-    'upg_teleport2': 'choose_worm',
-    'emg_teleport': 'choose_worm',
-    'invisibility': 'choose_worm',
     'dynamite_bomblet': 'dynamite_bunch',
     'pulse_pistol': 'plasma_pistol',
     'luiston': 'plasma_pistol',
@@ -229,18 +208,41 @@ for (const key of keys) {
     let effectsParity = 'Fallback (Generic particle)';
     let animationParity = 'Original (vrotating/spin)';
 
+    const NO_HELD_SPRITE = [
+        'grenade', 'plasma_grenade', 'pulse_grenade', 'holy_hand_grenade',
+        'cluster_bomb', 'molotov', 'mortar', 'upg_mortar', 'putty_grenade',
+        'banana_bomb', 'nuclear_bomb', 'ap_bazooka2', 'dl19', 'rj46',
+        'mine', 'fire_mine', 'plasma_mine', 'pulse_mine', 'nuclear_mine',
+        'dynamite', 'dynamite_bunch', 'old_woman', 'sheep', 'mine_sheep', 'mine_sheep2',
+        'fireball', 'air_strike', 'napalm_strike', 'mine_strike', 'banana_strike', 'holy_strike', 'orbit_strike', 'skyfire',
+        'teleport', 'jet_pack', 'girder', 'skip_go', 'blow_torch', 'pneumatic_drill',
+        'parachute', 'girder_pack', 'upg_teleport', 'upg_jet_pack', 'ag_pack',
+        'add_time', 'upg_teleport2', 'emg_teleport', 'invisibility', 'medikit',
+        'super_medikit', 'laser_sight', 'low_gravity', 'fast_walk', 'ultra_scaner'
+    ];
+
     if (FLASH_SHARED_ASSETS[key]) {
         iconParity = 'Shared (Original)';
-        heldParity = heldExists ? 'Shared (Original)' : 'Mismatch';
-        projParity = projExists ? 'Shared (Original)' : 'Mismatch';
+        heldParity = heldExists ? 'Shared (Original)' : (NO_HELD_SPRITE.includes(key) ? 'Shared (No held sprite in Original)' : 'Mismatch');
+        projParity = projExists ? 'Shared (Original)' : (GUN_BULLETS[key] ? 'Original (uses generic bullet)' : 'Mismatch');
         comment = FLASH_SHARED_ASSETS[key];
     } else if (fallbackLevel === 'fallback') {
         comment = `Falls back to ${searchKey}`;
     } else if (!heldExists && !projExists && !iconExists) {
         comment = `Missing ALL specific visual assets`;
     } else if (!heldExists) {
-        comment = `Missing held asset`;
-        heldParity = 'Mismatch (Falls back to icon/proj)';
+        if (NO_HELD_SPRITE.includes(key)) {
+            heldParity = 'Original (No held weapon)';
+            projParity = projExists ? 'Original' : (GUN_BULLETS[key] ? 'Original (uses generic bullet)' : 'Mismatch');
+            comment = 'Original Flash does not use held sprite for this';
+        } else {
+            comment = `Missing held asset`;
+            heldParity = 'Mismatch (Falls back to icon/proj)';
+        }
+    }
+    
+    if (GUN_BULLETS[key] && projParity === 'Mismatch') {
+        projParity = 'Original (uses generic bullet)';
     }
 
     markdown += `| ${key} | ${iconParity} | ${heldParity} | ${projParity} | ${effectsParity} | ${animationParity} | ${comment} |\n`;
