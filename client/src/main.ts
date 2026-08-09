@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { DestructibleTerrainScene } from './game/scene/DestructibleTerrainScene';
+import { WeaponSheetScene } from './game/scene/WeaponSheetScene';
 
 async function initGame() {
     const res = await fetch('/levels_config.json');
@@ -38,13 +39,15 @@ async function initGame() {
         }
     }
 
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
     const config: Phaser.Types.Core.GameConfig = {
         type: Phaser.AUTO,
         width: 1300,
         height: 700,
         parent: 'game-container',
         backgroundColor: '#87CEEB', // Sky blue
-        scene: DestructibleTerrainScene,
+        scene: [DestructibleTerrainScene, WeaponSheetScene],
         scale: {
             mode: Phaser.Scale.FIT,
             autoCenter: Phaser.Scale.CENTER_BOTH
