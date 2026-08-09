@@ -813,6 +813,12 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     }
 
     private placeGirder(x: number, y: number, angle: number): boolean {
+        const activeWorm = this.worms[this.activeWormIndex];
+        if (!activeWorm) return false;
+        
+        const dist = Phaser.Math.Distance.Between(activeWorm.x, activeWorm.y, x, y);
+        if (dist > 150) return false; // Out of range
+        
         const gW = 120;
         const gH = 16;
         const cosA = Math.cos(-angle);
@@ -1126,8 +1132,11 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             if (activeWorm && activeWorm.team === 1 && activeWorm.health > 0) {
                 const pointer = this.input.activePointer;
                 const worldCoords = this.screenToWorld(pointer.worldX, pointer.worldY);
-                this.girderPreviewGraphics.lineStyle(2, 0xffff00, 0.8);
-                this.girderPreviewGraphics.fillStyle(0x888888, 0.5);
+                const dist = Phaser.Math.Distance.Between(activeWorm.x, activeWorm.y, worldCoords.x, worldCoords.y);
+                const isOutOfRange = dist > 150;
+                
+                this.girderPreviewGraphics.lineStyle(2, isOutOfRange ? 0xff0000 : 0xffff00, 0.8);
+                this.girderPreviewGraphics.fillStyle(isOutOfRange ? 0xff0000 : 0x888888, 0.5);
                 const gW = 120;
                 const gH = 16;
                 this.girderPreviewGraphics.save();
