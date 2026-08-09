@@ -38,6 +38,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     // Keys
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private spaceKey!: Phaser.Input.Keyboard.Key;
+    private bKey!: Phaser.Input.Keyboard.Key;
 
     private isLaserSightActive: boolean = false;
     
@@ -184,6 +185,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         if (this.input.keyboard) {
             this.cursors = this.input.keyboard.createCursorKeys();
             this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+            this.bKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
         }
 
         const levelsConfig = this.registry.get('levelsConfig') || {};
@@ -271,7 +273,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.startTurnTimer();
         }
 
-        this.input.on('pointerdown', () => this.handlePointerDown());
+        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => this.handlePointerDown(pointer));
         this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => this.handlePointerUp(pointer));
         
         this.events.once('shutdown', this.cleanup, this);
@@ -325,7 +327,16 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         };
     }
 
-    private handlePointerDown() {
+    private handlePointerDown(pointer: Phaser.Input.Pointer) {
+        if (pointer.rightButtonDown()) {
+            if (this.scene.isActive('WeaponSheetScene')) {
+                this.scene.stop('WeaponSheetScene');
+            } else {
+                this.scene.launch('WeaponSheetScene');
+            }
+            return;
+        }
+
         if (this.waitingForTurnEnd || this.isGameOver || this.worms.length === 0) return;
         const activeWorm = this.worms[this.activeWormIndex];
         if (activeWorm.health <= 0 || activeWorm.team !== 1) return;
@@ -337,6 +348,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     }
 
     private handlePointerUp(pointer: Phaser.Input.Pointer) {
+        if (pointer.rightButtonDown()) return;
+        
         if (!this.isAiming) return;
         this.isAiming = false;
         this.fireCharge = 0;
@@ -835,6 +848,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private handlePlayerInput() {
         const activeWorm = this.worms[this.activeWormIndex];
         if (activeWorm.team !== 1) return;
+
+        if (Phaser.Input.Keyboard.JustDown(this.bKey)) {
+            if (this.scene.isActive('WeaponSheetScene')) {
+                this.scene.stop('WeaponSheetScene');
+            } else {
+                this.scene.launch('WeaponSheetScene');
+            }
+        }
 
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             let detonatedAnimal = false;
