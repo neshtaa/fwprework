@@ -23,12 +23,16 @@ const fs = require('fs');
     });
 
     page.on('pageerror', err => {
-        consoleErrors.push(`[UNCAUGHT] ${err.toString()}`);
+        consoleErrors.push(`[UNCAUGHT] ${err.stack || err.toString()}`);
     });
 
-    console.log('Navigating to http://localhost:5174 ...');
-    await page.goto('http://localhost:5174', { waitUntil: 'networkidle' });
+    console.log('Navigating to http://localhost:5173 ...');
+    await page.goto('http://localhost:5173', { waitUntil: 'networkidle' });
     await page.waitForTimeout(2000);
+    
+    await page.waitForFunction(() => {
+        return window.__GAME__ && window.__GAME__.scene.getScenes(true).length > 0;
+    }, { timeout: 10000 });
 
     async function getGameState() {
         return await page.evaluate(() => {
@@ -78,10 +82,13 @@ const fs = require('fs');
         await changeMap(map);
         await page.waitForTimeout(250);
         const state = await getGameState();
+        if (!state) {
+            console.error(`[ERROR] State is null for map: ${map}. Game might have crashed! Errors:`, consoleErrors);
+        }
         const fallback = consoleErrors.find(e => e.includes(`Using fallback coordinates`) && e.includes(`'${map}'`));
         mapResults.push({
             name: map,
-            worms: state.wormsCount,
+            worms: state ? state.wormsCount : 0,
             fallbackTriggered: !!fallback
         });
     }

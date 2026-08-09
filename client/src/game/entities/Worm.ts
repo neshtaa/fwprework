@@ -257,7 +257,7 @@ export class Worm {
         if (this.isJetpacking) {
             this.updateJetpack();
         } else if (this.isDigging) {
-            this.updateDigging(delta);
+            this.updateDigging(_delta);
         } else {
             // Apply gravity if not grounded
             if (!this.isGrounded) {

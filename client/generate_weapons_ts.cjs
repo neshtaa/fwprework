@@ -72,7 +72,9 @@ for (const key in weapons) {
     
     let timerMs = undefined;
     if (timingExplode) {
-        timerMs = (w.TIMEOUT || 3) * 1000;
+        let t = w.TIMEOUT || 3;
+        if (t > 10) t = 3;
+        timerMs = t * 1000;
     } // Remove the else if (w.TIMEOUT > 0) to avoid false timers!
     
     const gravityMultiplier = w.GRAVITY ? (w.GRAVITYMULTIPLY || 1.0) : 0;

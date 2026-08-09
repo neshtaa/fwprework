@@ -14,6 +14,7 @@ export class WeaponSheetScene extends Phaser.Scene {
 
         const closeBtn = this.add.text(680, 120, '[X]', { fontSize: '24px', color: '#ff0000' }).setInteractive();
         closeBtn.on('pointerdown', () => this.scene.stop());
+        const tooltipText = this.add.text(400, 480, '', { fontSize: '18px', color: '#ffff00' }).setOrigin(0.5);
 
         // Just display a simple grid of icons for now
         let x = 150;
@@ -26,12 +27,23 @@ export class WeaponSheetScene extends Phaser.Scene {
             // Draw a small box
             const box = this.add.rectangle(x, y, 40, 40, 0x333333).setInteractive();
             box.setStrokeStyle(1, 0xffffff);
-            
-            this.add.text(x, y, w.name.substring(0, 3), { fontSize: '10px' }).setOrigin(0.5);
+            const txt = this.add.text(x, y, w.name.substring(0, 3), { fontSize: '10px', color: '#ffffff' }).setOrigin(0.5);
             
             box.on('pointerdown', () => {
                 this.registry.set('currentWeapon', key);
                 this.scene.stop();
+            });
+            
+            box.on('pointerover', () => {
+                box.setStrokeStyle(2, 0xffff00);
+                txt.setColor('#ffff00');
+                tooltipText.setText(w.name);
+            });
+            
+            box.on('pointerout', () => {
+                box.setStrokeStyle(1, 0xffffff);
+                txt.setColor('#ffffff');
+                tooltipText.setText('');
             });
             
             x += 50;

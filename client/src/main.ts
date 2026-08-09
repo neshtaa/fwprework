@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DestructibleTerrainScene } from './game/scene/DestructibleTerrainScene';
 import { WeaponSheetScene } from './game/scene/WeaponSheetScene';
+import { BattleUIScene } from './game/scene/BattleUIScene';
 
 async function initGame() {
     const res = await fetch('/levels_config.json');
@@ -47,7 +48,7 @@ async function initGame() {
         height: 700,
         parent: 'game-container',
         backgroundColor: '#87CEEB', // Sky blue
-        scene: [DestructibleTerrainScene, WeaponSheetScene],
+        scene: [DestructibleTerrainScene, WeaponSheetScene, BattleUIScene],
         scale: {
             mode: Phaser.Scale.FIT,
             autoCenter: Phaser.Scale.CENTER_BOTH

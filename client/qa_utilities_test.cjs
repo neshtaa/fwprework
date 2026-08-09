@@ -20,9 +20,13 @@ const fs = require('fs');
         consoleErrors.push(`[UNCAUGHT] ${err.toString()}`);
     });
 
-    console.log('Navigating to http://localhost:5174 ...');
-    await page.goto('http://localhost:5174', { waitUntil: 'networkidle' });
+    console.log('Navigating to http://localhost:5173 ...');
+    await page.goto('http://localhost:5173', { waitUntil: 'networkidle' });
     await page.waitForTimeout(2000);
+    
+    await page.waitForFunction(() => {
+        return window.__GAME__ && window.__GAME__.scene.getScenes(true).length > 0;
+    }, { timeout: 10000 });
 
     async function getGameState() {
         return await page.evaluate(() => {

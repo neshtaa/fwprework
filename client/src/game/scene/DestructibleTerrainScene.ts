@@ -21,11 +21,19 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private canvasTexture!: Phaser.Textures.CanvasTexture;
     private mapImage!: Phaser.GameObjects.Image;
     private worldPhysics!: WorldPhysics;
-    private worms: Worm[] = [];
+    public worms: Worm[] = [];
+    public activeWormIndex: number = 0;
+    public turnTimeLeft: number = 60;
+    private turnTimerEvent: Phaser.Time.TimerEvent | null = null;
+    
+    public currentWind: number = 0; // -1 to 1
+
     private projectiles: Projectile[] = [];
     private fireParticles: FireParticle[] = [];
     private poisonParticles: PoisonParticle[] = [];
-    private activeWormIndex: number = 0;
+
+    public teamInventories: Record<number, Record<string, number>> = {};
+    public fireCharge: number = 0;
 
     // Keys
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -34,8 +42,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private isLaserSightActive: boolean = false;
     
     // Game state
-    private turnTimeLeft: number = 60;
-    private turnTimerEvent!: Phaser.Time.TimerEvent;
     private turnEndTimerEvent?: Phaser.Time.TimerEvent;
     private waitingForTurnEnd: boolean = false;
     private isGameOver: boolean = false;
@@ -46,10 +52,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private aimCrosshair!: Phaser.GameObjects.Image;
 
     private trajectoryGraphics!: Phaser.GameObjects.Graphics;
-    private currentWind: number = 0;
     
-    // Inventory: teamId -> { weaponKey -> count }
-    private teamInventories: Record<number, Record<string, number>> = {};
     private aiBot!: AIBot;
 
     private activeBurst: {
@@ -76,7 +79,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
     preload() {
         const currentMapPath = this.registry.get('currentMap') || '/1_dmap.png';
-        this.load.image('map', currentMapPath);
+        const mapKey = 'map_' + this.registry.get('currentMapName');
+        this.load.image(mapKey, currentMapPath);
         
         for (let i = 0; i < 60; i++) this.load.image(`worm_idle_${i}`, `/sprites/worm_idle/${i + 1}.png`);
         for (let i = 0; i < 9; i++) this.load.image(`worm_walk_${i}`, `/sprites/worm_walk/${i + 1}.png`);
@@ -156,7 +160,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.registry.set('currentWeapon', 'bazooka');
         }
 
-        const mapKey = 'map';
+        const mapKey = 'map_' + this.registry.get('currentMapName');
         const sourceImage = this.textures.get(mapKey).getSourceImage();
         const width = sourceImage.width as number;
         const height = sourceImage.height as number;
@@ -248,9 +252,13 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         spawnWorms(coordsData.team1, 0xff5555, 1, 'Red');
         spawnWorms(coordsData.team2, 0x55ff55, 2, 'Green');
+        
+        // Launch the Battle UI Scene in parallel
+        this.scene.launch('BattleUIScene');
+        this.events.on('shutdown', () => {
+            this.scene.stop('BattleUIScene');
+        });
         spawnWorms(coordsData.team3, 0x5555ff, 3, 'Blue');
-
-        this.updateWeaponUI();
 
         this.aiBot = new AIBot(this, this.worldPhysics, this.worms);
 
@@ -261,7 +269,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             this.worms[0].isActive = true;
             this.cameras.main.startFollow(this.worms[0].sprite);
             this.startTurnTimer();
-            this.updateUI();
         }
 
         this.input.on('pointerdown', () => this.handlePointerDown());
@@ -311,20 +318,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         getRequiredElement('btn-restart').onclick = () => this.scene.restart();
     }
     
-    private updateWeaponUI() {
-        const activeTeam = this.worms[this.activeWormIndex]?.team || 1;
-        const inventory = this.teamInventories[activeTeam];
-        let currentVal = this.registry.get('currentWeapon') as string;
-        
-        // If current weapon is out of ammo, fallback to the first available weapon
-        if (inventory[currentVal] === 0) {
-            const firstAvailable = Object.keys(WEAPONS).find(key => inventory[key] !== 0 && WEAPONS[key as WeaponType].shown);
-            if (firstAvailable) {
-                this.registry.set('currentWeapon', firstAvailable);
-            }
-        }
-    }
-
     private screenToWorld(pointerX: number, pointerY: number): { x: number, y: number } {
         return {
             x: pointerX - (this.mapImage.x - this.canvasTexture.width / 2),
@@ -418,7 +411,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         } else if (inventory[currentWeapon] > 0) {
             inventory[currentWeapon]--;
         }
-        this.updateWeaponUI();
         
         const config = WEAPONS[currentWeapon];
         
@@ -717,7 +709,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                     this.turnTimeLeft = 0;
                     this.waitingForTurnEnd = true;
                 }
-                this.updateUI();
             },
             loop: true
         });
@@ -774,24 +765,8 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 worm.isGrounded = false;
             }
         }
-        
-        this.updateUI();
-        this.checkWinCondition();
     }
-
-    private updateUI() {
-        getRequiredElement('turn-timer').innerText = this.turnTimeLeft.toString();
         
-        if (this.worms.length > 0) {
-            const currentWorm = this.worms[this.activeWormIndex];
-            const teamNames = ['None', 'Red', 'Green', 'Blue'];
-            getRequiredElement('active-team-text').innerText = `${teamNames[currentWorm.team]} Turn`;
-            getRequiredElement('active-team-text').style.color = currentWorm.team === 1 ? '#ff5555' : currentWorm.team === 2 ? '#55ff55' : '#5555ff';
-        }
-        
-        getRequiredElement('wind-indicator').innerText = `Wind: ${(this.currentWind * 100).toFixed(0)}`;
-    }
-
     private checkWinCondition() {
         if (this.isGameOver) return;
         const aliveTeams = new Set<number>();
@@ -1019,7 +994,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 for (const worm of this.worms) {
                     if (worm.health > 0 && (!worm.isGrounded || Math.abs(worm.vx) > 0.1 || Math.abs(worm.vy) > 0.1)) {
                         anyWormsMoving = true;
-                        // console.log(`TURN STATE: Worm ${worm.team} is moving (grounded: ${worm.isGrounded}, vx: ${worm.vx.toFixed(2)}, vy: ${worm.vy.toFixed(2)})`);
                     }
                 }
 
@@ -1209,15 +1183,12 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         this.currentWind = (Math.random() - 0.5) * 0.4;
         
-        this.updateWeaponUI();
-
         if (found) {
             const activeWorm = this.worms[this.activeWormIndex];
             activeWorm.isActive = true;
             this.cameras.main.startFollow(activeWorm.sprite);
             this.startTurnTimer();
             this.remainingShots = 0;
-            this.updateUI();
 
             // Let AI take turn if team != 1
             if (activeWorm.team !== 1) {
@@ -1242,6 +1213,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 });
             }
 
+            this.checkWinCondition();
         } else {
             this.checkWinCondition();
         }
