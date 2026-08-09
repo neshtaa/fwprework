@@ -816,18 +816,6 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private updateUI() {
         getRequiredElement('turn-timer').innerText = this.turnTimeLeft.toString();
         
-        let t1h = 0, t2h = 0, t3h = 0;
-        for (const w of this.worms) {
-            if (w.health > 0) {
-                if (w.team === 1) t1h += w.health;
-                if (w.team === 2) t2h += w.health;
-                if (w.team === 3) t3h += w.health;
-            }
-        }
-        getRequiredElement('team1-health').innerText = `Red Team: ${t1h}`;
-        getRequiredElement('team2-health').innerText = `Green Team: ${t2h}`;
-        getRequiredElement('team3-health').innerText = `Blue Team: ${t3h}`;
-
         if (this.worms.length > 0) {
             const currentWorm = this.worms[this.activeWormIndex];
             const teamNames = ['None', 'Red', 'Green', 'Blue'];
