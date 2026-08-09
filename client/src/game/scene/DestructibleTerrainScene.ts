@@ -332,16 +332,16 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         
         this.isAiming = true;
         this.aimPower = 0;
+        this.fireCharge = 0;
         this.aimCrosshair.setVisible(true);
-        getRequiredElement('aim-power').style.display = 'block';
     }
 
     private handlePointerUp(pointer: Phaser.Input.Pointer) {
         if (!this.isAiming) return;
         this.isAiming = false;
+        this.fireCharge = 0;
         this.aimCrosshair.setVisible(false);
         this.trajectoryGraphics.clear();
-        getRequiredElement('aim-power').style.display = 'none';
 
         const activeWorm = this.worms[this.activeWormIndex];
         const worldCoords = this.screenToWorld(pointer.worldX, pointer.worldY);
@@ -917,7 +917,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         }
 
         this.aimPower = Math.min(100, this.aimPower + (delta / 10)); // Max out in 1 sec
-        getRequiredElement('power-val').innerText = Math.floor(this.aimPower).toString();
+        this.fireCharge = this.aimPower;
         
         const dx = worldCoords.x - activeWorm.x;
         const dy = worldCoords.y - activeWorm.y;
