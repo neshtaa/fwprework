@@ -252,13 +252,13 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
         spawnWorms(coordsData.team1, 0xff5555, 1, 'Red');
         spawnWorms(coordsData.team2, 0x55ff55, 2, 'Green');
+        spawnWorms(coordsData.team3, 0x5555ff, 3, 'Blue');
         
         // Launch the Battle UI Scene in parallel
         this.scene.launch('BattleUIScene');
         this.events.on('shutdown', () => {
             this.scene.stop('BattleUIScene');
         });
-        spawnWorms(coordsData.team3, 0x5555ff, 3, 'Blue');
 
         this.aiBot = new AIBot(this, this.worldPhysics, this.worms);
 
