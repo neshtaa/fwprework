@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
 import { WorldPhysics } from '../core/WorldPhysics';
 import { WEAPONS } from '../data/weapons';
-import type { WeaponConfig } from '../data/weapons';
-
-import type { WeaponType } from '../data/weapons';
+import type { WeaponType, WeaponConfig } from '../data/weapons';
+import { WEAPON_PROJ_FRAMES } from '../data/weapon_preloads';
 import type { Worm } from './Worm';
 
 export interface ProjectileCallbacks {
@@ -78,10 +77,33 @@ export class Projectile {
 
         this.wind = this.config.affectedByWind ? wind : 0;
 
-        // Use the weaponType as the texture key for now, fallback to bazooka_0
-        const textureKey = `${weaponType}_0`;
-        const hasTexture = scene.textures.exists(textureKey);
-        this.sprite = scene.add.sprite(x, y, hasTexture ? textureKey : 'bazooka_0');
+        // Use the proj_ prefix for projectiles
+        this.callbacks = callbacks;
+        this.worldPhysics = worldPhysics;
+        
+        const frameCount = WEAPON_PROJ_FRAMES[weaponType];
+        if (frameCount && frameCount > 1) {
+            this.sprite = scene.add.sprite(this.x, this.y, `proj_${weaponType}_0`);
+            const animKey = `anim_proj_${weaponType}`;
+            
+            // Create animation if it doesn't exist yet globally
+            if (!scene.anims.exists(animKey)) {
+                const frames = [];
+                for (let i = 0; i < frameCount; i++) {
+                    frames.push({ key: `proj_${weaponType}_${i}` });
+                }
+                scene.anims.create({
+                    key: animKey,
+                    frames: frames,
+                    frameRate: 15,
+                    repeat: -1
+                });
+            }
+            this.sprite.play(animKey);
+        } else {
+            this.sprite = scene.add.sprite(this.x, this.y, `proj_${weaponType}`);
+        }
+        
         this.sprite.setOrigin(0.5, 0.5);
         this.vx = vx;
         this.vy = vy;
@@ -251,10 +273,14 @@ export class Projectile {
         
         this.sprite.setPosition(this.x, this.y);
         
-        if (this.vx !== 0 || this.vy !== 0) {
+        if (this.config.vrotating && (this.vx !== 0 || this.vy !== 0)) {
              this.sprite.setRotation(Math.atan2(this.vy, this.vx));
+        } else if (!this.isMine && !this.isAnimal && !this.config.vrotating && this.config.wptype !== 'c' && this.config.wptype !== 'h' && this.config.wptype !== 's') {
+            // Spin effect for grenades/bombs
+            if (this.vx !== 0 || this.vy !== 0) {
+                this.sprite.rotation += 0.1 * delta / 16;
+            }
         }
-
         // Out of bounds check
         if (this.y > 1500 || this.x < -500 || this.x > 2500) {
             this.destroy();
