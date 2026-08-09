@@ -65,6 +65,10 @@ export class DestructibleTerrainScene extends Phaser.Scene {
     private remainingShots: number = 0;
     private airStrikeDirection: number = 1; // 1 = right, -1 = left
 
+    // Girder
+    private girderPreviewGraphics!: Phaser.GameObjects.Graphics;
+    private girderAngle: number = 0;
+    private girderPackLeft: number = 0;
 
     constructor() {
         super('DestructibleTerrainScene');
@@ -176,6 +180,10 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         this.worldPhysics = new WorldPhysics(this.canvasTexture);
 
         this.trajectoryGraphics = this.add.graphics();
+        this.trajectoryGraphics.setDepth(10);
+        
+        this.girderPreviewGraphics = this.add.graphics();
+        this.girderPreviewGraphics.setDepth(11);
 
         if (this.input.keyboard) {
             this.cursors = this.input.keyboard.createCursorKeys();
@@ -395,11 +403,14 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             }
             if (config.wptype === 'u') { // Utilities like Teleport, Medikit, etc.
                 const isTeleport = currentWeapon === 'teleport' || currentWeapon === 'upg_teleport' || currentWeapon === 'upg_teleport2';
+                const isGirder = currentWeapon === 'girder' || currentWeapon === 'girder_pack';
                 
                 if (isTeleport) {
                     if (this.worldPhysics.checkTeleport(worldCoords.x, worldCoords.y)) {
                         this.fireWeapon(0, 0, worldCoords.x, worldCoords.y);
                     }
+                } else if (isGirder) {
+                    this.fireWeapon(0, 0, worldCoords.x, worldCoords.y);
                 } else {
                     // Non-targeted utilities (skip_go, medikit, etc)
                     this.fireWeapon(0, 0);
@@ -436,7 +447,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         const inventory = this.teamInventories[activeTeam];
         
         if (inventory[currentWeapon] === 0) return; // Cannot fire if out of ammo
-        if (inventory[currentWeapon] > 0) {
+        if (currentWeapon === 'girder_pack' && this.girderPackLeft > 0) {
+            // Already consumed a pack this turn, use internal pack counter
+        } else if (inventory[currentWeapon] > 0) {
             inventory[currentWeapon]--;
         }
         this.updateWeaponUI();
@@ -529,6 +542,24 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                 return;
             } else if (currentWeapon === 'parachute') {
                 activeWorm.startParachute();
+                return;
+            } else if (targetX !== undefined && targetY !== undefined && (currentWeapon === 'girder' || currentWeapon === 'girder_pack')) {
+                if (this.placeGirder(targetX, targetY, this.girderAngle)) {
+                    if (currentWeapon === 'girder_pack') {
+                        if (this.girderPackLeft === 0) {
+                            this.girderPackLeft = 4; // 1 used, 4 left (total 5 uses per pack)
+                        } else {
+                            this.girderPackLeft--;
+                        }
+                        if (this.girderPackLeft <= 0) {
+                            this.waitingForTurnEnd = true;
+                            this.turnTimeLeft = 0;
+                        }
+                    } else {
+                        this.waitingForTurnEnd = true;
+                        this.turnTimeLeft = 0;
+                    }
+                }
                 return;
             } else if (targetX !== undefined && targetY !== undefined && (currentWeapon === 'teleport' || currentWeapon === 'upg_teleport' || currentWeapon === 'upg_teleport2')) {
                 // Teleport execution
@@ -827,6 +858,61 @@ export class DestructibleTerrainScene extends Phaser.Scene {
         }
     }
 
+    private placeGirder(x: number, y: number, angle: number): boolean {
+        const gW = 120;
+        const gH = 16;
+        const cosA = Math.cos(-angle);
+        const sinA = Math.sin(-angle);
+        
+        // Check intersection with worms
+        for (const worm of this.worms) {
+            if (worm.health <= 0) continue;
+            const tx = worm.x - x;
+            const ty = worm.y - y;
+            const rx = tx * cosA - ty * sinA;
+            const ry = tx * sinA + ty * cosA;
+            if (rx >= -gW/2 - 12 && rx <= gW/2 + 12 && ry >= -gH/2 - 12 && ry <= gH/2 + 12) {
+                return false; // Cannot place on top of a worm
+            }
+        }
+        
+        // Draw to canvasTexture
+        const ctx = this.canvasTexture.context;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(-gW/2, -gH/2, gW, gH);
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-gW/2, -gH/2, gW, gH);
+        ctx.restore();
+        this.canvasTexture.refresh();
+
+        // Update WorldPhysics
+        const boundsRadius = Math.ceil(Math.sqrt(gW*gW + gH*gH) / 2);
+        const startX = Math.max(0, Math.floor(x - boundsRadius));
+        const endX = Math.min(this.worldPhysics.width - 1, Math.ceil(x + boundsRadius));
+        const startY = Math.max(0, Math.floor(y - boundsRadius));
+        const endY = Math.min(this.worldPhysics.height - 1, Math.ceil(y + boundsRadius));
+        
+        for (let py = startY; py <= endY; py++) {
+            for (let px = startX; px <= endX; px++) {
+                const tx = px - x;
+                const ty = py - y;
+                const rx = tx * cosA - ty * sinA;
+                const ry = tx * sinA + ty * cosA;
+                if (rx >= -gW/2 - 1 && rx <= gW/2 + 1 && ry >= -gH/2 - 1 && ry <= gH/2 + 1) {
+                    this.worldPhysics.addSolidPixel(px, py);
+                }
+            }
+        }
+        
+        const sndKey = WEAPONS['girder']?.sound || 'girder';
+        if (this.cache.audio.exists(sndKey)) this.sound.play(sndKey, { volume: 0.6 });
+        return true;
+    }
+
     private handlePlayerInput() {
         const activeWorm = this.worms[this.activeWormIndex];
         if (activeWorm.team !== 1) return;
@@ -870,6 +956,9 @@ export class DestructibleTerrainScene extends Phaser.Scene {
                     if (this.cursors.left.isDown) this.airStrikeDirection = -1;
                     if (this.cursors.right.isDown) this.airStrikeDirection = 1;
                 }
+            } else if (currentWeapon === 'girder' || currentWeapon === 'girder_pack') {
+                if (this.cursors.left.isDown) this.girderAngle -= 0.05;
+                if (this.cursors.right.isDown) this.girderAngle += 0.05;
             } else {
                 if (this.cursors.left.isDown) activeWorm.moveLeft();
                 else if (this.cursors.right.isDown) activeWorm.moveRight();
@@ -1091,6 +1180,27 @@ export class DestructibleTerrainScene extends Phaser.Scene {
             }
         }
 
+        // Draw Girder Preview
+        this.girderPreviewGraphics.clear();
+        const currentWeapon = this.registry.get('currentWeapon') as WeaponType;
+        if ((currentWeapon === 'girder' || currentWeapon === 'girder_pack') && !this.waitingForTurnEnd) {
+            const activeWorm = this.worms[this.activeWormIndex];
+            if (activeWorm && activeWorm.team === 1 && activeWorm.health > 0) {
+                const pointer = this.input.activePointer;
+                const worldCoords = this.screenToWorld(pointer.worldX, pointer.worldY);
+                this.girderPreviewGraphics.lineStyle(2, 0xffff00, 0.8);
+                this.girderPreviewGraphics.fillStyle(0x888888, 0.5);
+                const gW = 120;
+                const gH = 16;
+                this.girderPreviewGraphics.save();
+                this.girderPreviewGraphics.translateCanvas(worldCoords.x + (this.mapImage.x - this.canvasTexture.width / 2), worldCoords.y + (this.mapImage.y - this.canvasTexture.height / 2));
+                this.girderPreviewGraphics.rotateCanvas(this.girderAngle);
+                this.girderPreviewGraphics.fillRect(-gW/2, -gH/2, gW, gH);
+                this.girderPreviewGraphics.strokeRect(-gW/2, -gH/2, gW, gH);
+                this.girderPreviewGraphics.restore();
+            }
+        }
+
         this.updateTurnState();
     }
 
@@ -1098,6 +1208,7 @@ export class DestructibleTerrainScene extends Phaser.Scene {
 
     private nextTurn() {
         if (this.worms.length === 0 || this.isGameOver) return;
+        this.girderPackLeft = 0;
         
         // Reset utilities from previous turn
         Projectile.BASE_GRAVITY = 0.24;

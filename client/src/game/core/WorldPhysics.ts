@@ -19,6 +19,12 @@ export class WorldPhysics {
         this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
     }
 
+    public addSolidPixel(x: number, y: number) {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
+        const index = (y * this.width + x) * 4 + 3;
+        this.imageData.data[index] = 255;
+    }
+
     public isSolid(x: number, y: number): boolean {
         const floorX = Math.floor(x);
         const floorY = Math.floor(y);
