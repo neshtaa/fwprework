@@ -18,7 +18,7 @@ export class WeaponSheetScene extends Phaser.Scene {
         
         // Close on right click or clicking outside panel
         bg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            if (pointer.rightButtonDown() || pointer.leftButtonDown()) {
+            if (pointer.rightButtonDown()) {
                 this.scene.stop();
             }
         });
